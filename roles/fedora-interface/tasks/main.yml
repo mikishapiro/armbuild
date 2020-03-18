@@ -1,0 +1,6 @@
+---
+# tasks file for fedora-interface
+- name: Deploy the configuration file from template
+  template:
+    src: templates/ifcfg-interface.j2 
+    dest: "{{ var_dest }}/ifcfg-{{ var_ifname |replace(' ', '_') }}"

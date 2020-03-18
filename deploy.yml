@@ -1,0 +1,20 @@
+---
+- name: Play to deploy an armulator
+  hosts: localhost
+  connection: local
+  vars: 
+    dir: /usr/src
+    date: "20200317"
+    rawfilename: Fedora-Server-armhfp-32-20200317.n.1-sda.raw 
+    xzfilename: "{{ rawfilename }}.xz"
+    url: "https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200317.n.1/compose/Server/armhfp/images/{{ xzfilename }}"
+    workpath: /var/lib/libvirt/images
+    rawmnt: /mnt/raw
+  tasks:
+    - name: Call the roles
+      include_role:
+        name: "{{ item }}"
+      loop:
+        - armulator
+#        - kernel
+#        - flash

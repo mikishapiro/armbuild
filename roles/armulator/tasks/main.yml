@@ -1,0 +1,236 @@
+---
+# tasks file for armulator
+
+# Download virtualisation packages
+- name: Install the virtualisation packages
+  package:
+    name: 
+      - qemu-system-arm
+      - qemu-system-aarch64
+      - virt-manager
+      - arm-image-installer
+      - libguestfs-tools-c
+      - xz
+      - virt-install
+      - python3-libvirt
+      - python3-lxml
+    state: latest
+  #loop:
+  #loop_control:
+  #  loop_var: pkg
+    
+# Download base image from https://www.happyassassin.net/nightlies.html
+# https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200314.n.1/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200314.n.1-sda.raw.xz
+# https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200314.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200314.n.1.aarch64.raw.xz
+#
+- name: Download the image
+  get_url:
+    url: "{{ url }}"
+    dest: "{{ workpath }}/{{ xzfilename }}"
+
+- name: "Check that {{ workpath }}/{{ rawfilename }} exists"
+  stat:
+    path: "{{ workpath }}/{{ rawfilename }}"
+  register: raw_image_stat_result
+
+- name: Uncompress the archive 
+  command: "unxz -k {{ workpath }}/{{ xzfilename }}"
+  when: raw_image_stat_result.stat.exists == False 
+
+- name: "Check that {{ workpath }}/{{ rawfilename }} exists"
+  stat:
+    path: "{{ workpath }}/{{ rawfilename }}"
+  register: raw_image_stat_result
+
+- debug: var=raw_image_stat_result.stat
+
+- name: size up the destination disk
+  set_fact:
+    desired_image_size: 7990149120
+
+- name: pad the raw image to this size
+  command: "dd if=/dev/zero of={{ workpath }}/{{ rawfilename }} bs=1 count=1 seek={{ desired_image_size - 1 }}"
+  when: raw_image_stat_result.stat.size < desired_image_size
+
+- name: Read raw file internal partition information 
+  parted:
+    device: "{{ workpath }}/{{ rawfilename }}"
+    unit: B
+  register: raw_part
+
+- debug: var={{ raw_part.partitions.2.begin | regex_replace('.0') }}
+
+#- name: find the block size of the raw disk image
+#  command: "fdisk -l fdisk -l /var/lib/libvirt/images/Fedora-Server-armhfp-32-20200314.n.1-sda.raw/var/lib/libvirt/images/Fedora-Server-armhfp-32-20200314.n.1-sda.raw|awk -F= '/Units/{print $2}'|awk '{print $1}'"
+#  register: raw_block_size
+
+# - debug var=raw_block_size
+#- name: find the first block of the primary partition in the disk
+#  command: "fdisk -l Fedora-Server-armhfp-32-20200314.n.1-sda.raw|grep 'raw3' |awk '{print $2}"
+#  register: raw_start_block
+#- debug var=raw_start_block
+
+- name: mount the raw disk
+  mount:
+    src: "{{ workpath }}/{{ rawfilename }}"
+    path: "{{ rawmnt }}"
+    opts: rw,loop,offset={{ raw_part.partitions.2.begin | regex_replace('.0') }}
+    state: mounted
+    fstab: /tmp/fstab.dummy
+    fstype: xfs
+
+- name: modify VM with network configuration to make it network-accessible when it boots
+  vars:
+    var_ip: 192.168.122.240
+    var_gw: 192.168.122.1
+    var_dns: 8.8.8.8
+    var_ifdevname: enp1s0
+    var_ifname: "Wired connection 1"
+    var_dest: "{{ rawmnt }}/etc/sysconfig/network-scripts"
+  include_role:
+    name: fedora-interface
+- name: create a mount point
+  file:
+    name: "{{ rawmnt }}/root/.ssh"
+    mode: '0700'
+    state: directory
+- name: create a file
+  file:
+    path: "{{ rawmnt }}/root/.ssh/authorized_keys"
+    mode: '0600'
+    state: touch
+
+- name: Set appropriate permissions on the authorized_keys file
+  lineinfile:
+    path: "{{ rawmnt }}/root/.ssh/authorized_keys"
+    state: present
+    line: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC/OzKiop0vzsvRJRadSHwj1nF2aKFGeCAreJJbBXkE0pW4Bo/MUgYr7zJia+7Z5x9COlS5gUMAyjg3EOR/XDZvoe0tkpcu1sTG2Ac5yOId91uoev0Vm3IKOttCEXjmgVRe7UYJfY0pAM+8S5MqDnylFpN1Uuoj7f5Ulkhx7HVEr7KWsXnLv/P09dEW+s9Ebpl9hnDFjzeRw9thIBRgXwzEmKdMxzgq+nVwUg3HfxEyf9jFSutfMNepmg7T7uQyQ2p38yy0nB+bmjzeRNHDzadNpTKJE2MYYzun9J6+8LAE8/HadvpWWIo5hEQJ519c8mYmqt4yso+uLJMAIBNOg9Z73IPVr8yuo6c6GY3jWI1cZB51OO1v+6dOM83tlN8w2vwIop2IoF1zc3OKolPXaP7NZttD8y+FOJrAnvSIooArEwenMEgJ8S03UMltMpDvNss/0+FLVx89WHs1mmr+8w8lAaO5LlN279RwiC+Lh13yP8oWmVUGGN0wGVsTWI494wk= root@a31.vebate.it"
+#  copy:
+#    src: ~/.ssh/id_rsa.pub
+#    dest: "{{ rawmnt }}/root/.ssh/authorized_keys"
+
+
+- name: Set root password
+  lineinfile:
+    path: "{{ rawmnt }}/etc/shadow"
+    state: present
+    #line: "root:::0:99999:7:::"
+    line: 'root:$6$J0i11mQkC3hUrO0G$u371fR0mPIS.bKQlIPFPXMbS7n62ZqJqamwv/WgsX9OeCznfHh97arNRl.TWUsc7.E7HqO50NTR.CbL/dp2Az0::0:99999:7:::'
+    regexp: '^root:'
+
+- name: Permit root login via ssh
+  lineinfile:
+    path: "{{ rawmnt }}/etc/ssh/sshd_config"
+    state: present
+    line: "PermitRootLogin yes"
+    regexp: '^PermitRootLogin'
+
+- name: Disable selinux
+  lineinfile:
+    path: "{{ rawmnt }}/etc/sysconfig/selinux"
+    state: present
+    line: "SELINUX=disabled"
+    regexp: '^SELINUX='
+
+- name: Disable the initial-setup service
+  file:
+    path: "{{ rawmnt }}/etc/systemd/system/multi-user.target.wants/{{ service }}.service"
+    state: absent
+  loop:
+    - initial-setup
+    - abrtd
+    - abrt-journal-core
+    - abrt-oops
+    - abrt-vmcore
+    - abrt-xorg
+    - cups
+    - nfs-client
+    - vboxservice
+    - vmtoolsd
+#    - rngd
+#   - libvirtd
+#   - ModemManager
+#   - auditd
+#   - smartd
+#   - avahi-daemon
+#   - remote-fs
+  loop_control:
+    loop_var: service
+
+- name: Unmount the raw volume
+  mount:
+    path: "{{ rawmnt }}"
+    state: unmounted
+
+- name: Enable & start the libvirtd service
+  service:
+    name: libvirtd
+    state: started
+    enabled: yes
+
+- name: Extract the kernel and initramfs from the image
+  command: "virt-builder --get-kernel {{ workpath }}/{{ rawfilename }}"
+  args:
+      chdir: "{{ workpath }}"
+  register: virt_builder_output
+
+- name: define a libvirt bridge network
+  virt_net:
+    command: define
+    name: bridge0
+    xml: '{{ lookup("template", "templates/network.xml.j2") }}'
+
+- name: start the libvirt network
+  virt_net:
+    command: create
+    name: bridge0
+
+- name: Find the kernel that just got extracted
+  find:
+    paths: "{{ workpath }}"
+    file_type: file
+    use_regex: yes
+    patterns: ['^vmlinuz.*']
+  register: kernels
+
+
+- debug: var=kernels
+
+- name: Find the initramfs that just got extracted
+  find:
+    paths: "{{ workpath }}"
+    file_type: file
+    use_regex: yes
+    patterns: ['^initramfs.*']
+  register: initramfs
+- debug: var=initramfs
+
+- name: Install a libvirt VM based on the image
+  vars:
+    kernel: "{{ workpath }}/{{ initramfs.files.0.path }}"
+    initrd: "{{ workpath }}/{{ kernels.files.0.path }}"
+    image: "{{ workpath }}/{{ rawfilename }}"
+  virt:
+    command: define
+    xml: "{{ lookup('template', 'vm_template.xml.j2') }}"
+    autostart: yes
+
+- name: start vm
+  virt:
+    name: ansible-spawn
+    state: running
+
+- name: Wait for build to complete
+  delegate_to: "192.168.122.240"
+  wait_for_connection:
+    delay: 30
+    timeout: 3600
+    sleep: 10
+
+- debug: msg="complete"
+
+
+
+#   command: "arm-image-installer --image=/var/lib/libvirt/images/Fedora-Server-armhfp-32-{{ date }}.n.1-sda.raw --target=rpi4"
+
+
