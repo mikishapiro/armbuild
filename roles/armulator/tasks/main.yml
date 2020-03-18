@@ -207,8 +207,8 @@
 
 - name: Install a libvirt VM based on the image
   vars:
-    kernel: "{{ workpath }}/{{ initramfs.files.0.path }}"
-    initrd: "{{ workpath }}/{{ kernels.files.0.path }}"
+    kernel: "{{ initramfs.files.0.path }}"
+    initrd: "{{ kernels.files.0.path }}"
     image: "{{ workpath }}/{{ rawfilename }}"
   virt:
     command: define
