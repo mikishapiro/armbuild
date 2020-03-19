@@ -1,0 +1,21 @@
+---
+# tasks file for image-flash
+
+- name: Read raw file internal partition information 
+  parted:
+    device: "{{ flashdevice }}"
+    unit: B
+  delegate_to: "{{ flashmachine }}"
+  register: raw_part
+- debug: var=raw_part
+
+- name: stream the image to the flashmachine and write it
+  shell: "dd if={{ extractedfile }} | ssh {{ flashmachine }} dd of={{ flashdevice }} bs=512k"
+
+- name: Read raw file internal partition information 
+  parted:
+    device: "{{ flashdevice }}"
+    unit: B
+  delegate_to: "{{ flashmachine }}"
+  register: raw_part
+- debug: var=raw_part
