@@ -1,24 +1,6 @@
 ---
 # tasks file for armulator
 
-- name: Enable & start the libvirtd service
-  service:
-    name: libvirtd
-    state: started
-    enabled: yes
-
-- name: Ensure a directory to store kernels exists
-  file:
-    path: "{{ kernelpath }}"
-    state: directory
-    mode: '0755'
-    
-- name: Extract the kernel and initramfs from the image
-  command: "virt-builder --get-kernel {{ extractedfile }}"
-  args:
-      chdir: "{{ kernelpath }}"
-  register: virt_builder_output
-
 - name: define a libvirt bridge network
   virt_net:
     command: define

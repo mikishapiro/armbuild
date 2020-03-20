@@ -5,13 +5,12 @@
     lvm: ""
 
 # Download virtualisation packages
-- name: Install the image handling packages
-  package:
-    name: 
-      - xz
-      - kpartx
-    state: latest
-  when: url == "false"
+#- name: Install the image handling packages
+#  package:
+#    name: 
+#      - xz
+#      - kpartx
+#    state: latest
   #loop:
   #loop_control:
   #  loop_var: pkg
@@ -21,17 +20,22 @@
 # https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200314.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200314.n.1.aarch64.raw.xz
 #
 - name: "Checking for redirect and setting redcheck.stdout_lines.0 to notredirect or the actual url"
-  shell: 'curl {{ url }} --max-time 5 --max-redirs 0 --silent > /dev/null && curl {{ url }} --max-redirs 0 --silent |grep moved|cut -d\" -f2 || echo notredirect'
+  shell: 'curl {{ fetch }} --max-time 5 --max-redirs 0 --silent > /dev/null && curl {{ fetch }} --max-redirs 0 --silent |grep moved|cut -d\" -f2 || echo notredirect'
   args:
     warn: no
   register: redcheck
 
 - debug: var=redcheck.stdout_lines.0
 
-- name: Use the redirect URL to avoid redownloading large images
-  set_fact: 
+- name: "Use the redirect URL {{ redcheck.stdout_lines.0 }} to avoid redownloading large images"
+  set_fact:
     url: "{{ redcheck.stdout_lines.0 }}"
   when: redcheck.stdout_lines.0 != "notredirect"
+
+- name: "Else use the original URL {{ fetch }}"
+  set_fact:
+    url: "{{ fetch }}"
+  when: redcheck.stdout_lines.0 == "notredirect"
 
 - name: "Download the image from {{ url }}"
   get_url:
@@ -186,6 +190,21 @@
     line: "PermitRootLogin yes"
     regexp: '^PermitRootLogin'
 
+- name: Ensure existance a directory to store kernels exists
+  file:
+    path: "{{ kernelpath }}"
+    state: directory
+    mode: '0755'
+
+- name: Enable & start the libvirtd service
+  service:
+    name: libvirtd
+    state: started
+    enabled: yes
+
+- name: Copy over the modules from the new system to its kernelpath in our libvirt stash
+  command: "cp -uvrfp {{ rawmnt }}/lib/modules {{ kernelpath }}/lib"
+
 - name: Include os-specific steps
   include: "{{ item }}-rootpart.yml"
   when: url.find(item) != -1
@@ -193,12 +212,10 @@
     - raspbian
     - fedora
 
-- name: Unmount the raw volumes
+- name: Unmount the root partition
   mount:
-    path: "{{ item }}"
+    path: "{{ rawmnt }}"
     state: unmounted
-  loop:
-    - "{{ rawmnt }}"
 
 - name: mount the boot partition
   mount:
@@ -216,9 +233,8 @@
   loop:
     - raspbian
     - fedora
+
 - name: Unmount the raw volumes
   mount:
-    path: "{{ item }}"
+    path: "{{ bootmnt }}"
     state: unmounted
-  loop:
-    - "{{ bootmnt }}"

@@ -9,23 +9,25 @@
     bootmnt: /mnt/boot
     flashmachine: armstrong
     flashdevice: /dev/sdb
-    # url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
-    url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200318.n.0.aarch64.raw.xz
-    # url: https://downloads.raspberrypi.org/raspbian_lite_latest
+    archsuffix: arm7vhl
+    # archsuffix: aarch64
   tasks:
-    - set_fact:
-        archsuffix: arm7vhl
-      when: ( url.find("armhfp") != -1 ) or ( url.find("raspbian") != -1 )
-    - set_fact:
-        archsuffix: aarch64
-      when: url.find("aarch64") != -1
-
-    - name: Call the roles
+    - name: Download and prep Fedora 32
+      vars:
+        fetch: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
       include_role:
-        name: "{{ role }}"
-      loop:
-        - image-prep
-        - armulator
-        - image-flash
-      loop_control:
-        loop_var: role
+        name: image-prep
+      when: 1 == 2
+
+    - name: Download and prep raspbian
+      vars:
+        fetch: https://downloads.raspberrypi.org/raspbian_lite_latest
+      include_role:
+        name: image-prep
+
+
+    - name: Flash the raspbian image
+      vars:
+        fetch: https://downloads.raspberrypi.org/raspbian_lite_latest
+      include_role:
+        name: image-flash
