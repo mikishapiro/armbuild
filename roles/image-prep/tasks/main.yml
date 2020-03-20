@@ -79,12 +79,16 @@
     device: "{{ extractedfile }}"
     unit: B
   register: raw_part
+
 - debug: var=raw_part.partitions
-- set_fact:
+
+- name: Concatenate partition flags to check if there are lvm ones
+  set_fact:
     partflags: "{{ partflags + item.flags }}"
   loop: "{{ raw_part.partitions }}"
-- debug: var=partflags
-- set_fact:
+
+- name: Enable lvm handling if an lvm flag is found
+  set_fact:
     lvm: true
   loop: "{{ partflags }}"
   when: item == "lvm"
@@ -99,23 +103,41 @@
 #  register: raw_start_block
 #- debug var=raw_start_block
 
-- name: select the main partition
+- name: Select the main partition
   set_fact:
-    main_partition: "{{ raw_part.partitions|last }}"
+    main_partition:
+      - "{{ raw_part.partitions|last }}"
 
-- name: mount the raw disk
+- set_fact:
+    remaining_parts: "{{ raw_part.partitions | difference( main_partition ) }}"
+
+- set_fact:
+    boot_partition: 
+      - "{{ remaining_parts|last }}"
+
+- name: make sure local mount stubs exist
+  file:
+    name: "{{ item }}"
+    mode: '0700'
+    state: directory
+  loop:
+    - "{{ rawmnt }}"
+    - "{{ bootmnt }}"
+
+- name: mount the main partition
   mount:
     src: "{{ extractedfile }}"
     path: "{{ rawmnt }}"
-    opts: rw,loop,offset={{ main_partition.begin | regex_replace('\.0') }}
+    opts: rw,loop,offset={{ main_partition.0.begin | regex_replace('\.0') }}
     state: mounted
     fstab: /tmp/fstab.dummy
-    fstype: "{{ main_partition.fstype }}"
+    fstype: "{{ main_partition.0.fstype | regex_replace('fat32', 'vfat')}}"
   when: lvm != true
+
 
 - command: "kpartx -av {{ extractedfile }}"
   when: url.find("aarch64") != -1
-#  register: kpartx_output
+  register: kpartx_output
 - debug: var=kpartx_output
 - name: mount the raw disk
   mount:
@@ -127,31 +149,7 @@
     fstype: xfs
   when: lvm == true
 
-- name: Fedora set network configuration
-  vars:
-    var_ip: 192.168.6.29
-    var_gw: 192.168.6.1
-    var_dns: 8.8.8.8
-    var_ifdevname: enp1s0
-    var_ifname: "Wired connection 1"
-    var_dest: "{{ rawmnt }}/etc/sysconfig/network-scripts"
-  include_role:
-    name: fedora-interface
-  when: url.find("fedora") == -1
-
-- name: Raspbian wifi configuration
-  template:
-    src: templates/wpa_supplicant.conf.j2
-    dest: "{{ rawmnt }}/wpa_supplicant.conf"
-
-- name: Raspbian touch ssh instruction file 
-  file:
-    name: "{{ rawmnt }}/touch /boot/sshroot"
-    mode: '0700'
-    state: file
-  when: url.find("raspbian") == -1
-
-- name: create a mount point
+- name: create a .ssh directory
   file:
     name: "{{ rawmnt }}/root/.ssh"
     mode: '0700'
@@ -187,41 +185,39 @@
     line: "PermitRootLogin yes"
     regexp: '^PermitRootLogin'
 
-- name: Disable selinux
-  lineinfile:
-    path: "{{ rawmnt }}/etc/sysconfig/selinux"
-    state: present
-    line: "SELINUX=disabled"
-    regexp: '^SELINUX='
-
-- name: Disable the initial-setup and other unneeded services
-  file:
-    path: "{{ rawmnt }}/etc/systemd/system/multi-user.target.wants/{{ service }}.service"
-    state: absent
+- name: Include os-specific steps
+  include: "{{ item }}-rootpart.yml"
+  when: url.find(item) != -1
   loop:
-    - initial-setup
-    - abrtd
-    - abrt-journal-core
-    - abrt-oops
-    - abrt-vmcore
-    - abrt-xorg
-    - cups
-    - nfs-client
-    - vboxservice
-    - vmtoolsd
-#    - rngd
-#   - libvirtd
-#   - ModemManager
-#   - auditd
-#   - smartd
-#   - avahi-daemon
-#   - remote-fs
-  loop_control:
-    loop_var: service
+    - raspbian
+    - fedora
 
-- name: Unmount the raw volume
+- name: Unmount the raw volumes
   mount:
-    path: "{{ rawmnt }}"
+    path: "{{ item }}"
     state: unmounted
+  loop:
+    - "{{ rawmnt }}"
 
+- name: mount the boot partition
+  mount:
+    src: "{{ extractedfile }}"
+    path: "{{ bootmnt }}"
+    opts: rw,loop,offset={{ boot_partition.0.begin | regex_replace('\.0') }}
+    state: mounted
+    fstab: /tmp/fstab.dummy
+    fstype: "{{ boot_partition.0.fstype | regex_replace('fat32', 'vfat') }}"
+  when: lvm != true
 
+- name: Include os-specific steps
+  include: "{{ item }}-bootpart.yml"
+  when: url.find(item) != -1
+  loop:
+    - raspbian
+    - fedora
+- name: Unmount the raw volumes
+  mount:
+    path: "{{ item }}"
+    state: unmounted
+  loop:
+    - "{{ bootmnt }}"

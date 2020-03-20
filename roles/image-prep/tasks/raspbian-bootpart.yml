@@ -1,0 +1,15 @@
+---
+# tasks file for armulator
+- name: Raspbian wifi configuration
+  template:
+    src: templates/wpa_supplicant.conf.j2
+    dest: "{{ bootmnt }}/wpa_supplicant.conf"
+
+- name: Raspbian touch ssh instruction file 
+  file:
+    name: "{{ bootmnt }}/sshroot"
+    mode: '0700'
+    state: touch
+
+
+

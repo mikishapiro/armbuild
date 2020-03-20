@@ -1,0 +1,50 @@
+---
+- name: Fedora set network configuration
+  vars:
+    var_ip: 192.168.6.29
+    var_gw: 192.168.6.1
+    var_dns: 8.8.8.8
+    var_ifdevname: enp1s0
+    var_ifname: "Wired connection 1"
+    var_dest: "{{ rawmnt }}/etc/sysconfig/network-scripts"
+  include_role:
+    name: fedora-interface
+
+- name: Disable selinux
+  lineinfile:
+    path: "{{ rawmnt }}/etc/sysconfig/selinux"
+    state: present
+    line: "SELINUX=disabled"
+    regexp: '^SELINUX='
+
+- name: Disable the initial-setup and other unneeded services
+  file:
+    path: "{{ rawmnt }}/etc/systemd/system/multi-user.target.wants/{{ service }}.service"
+    state: absent
+  loop:
+    - initial-setup
+    - abrtd
+    - abrt-journal-core
+    - abrt-oops
+    - abrt-vmcore
+    - abrt-xorg
+    - cups
+    - nfs-client
+    - vboxservice
+    - vmtoolsd
+#    - rngd
+#   - libvirtd
+#   - ModemManager
+#   - auditd
+#   - smartd
+#   - avahi-daemon
+#   - remote-fs
+  loop_control:
+    loop_var: service
+- fail:
+- name: Unmount the raw volume
+  mount:
+    path: "{{ rawmnt }}"
+    state: unmounted
+
+
