@@ -41,7 +41,6 @@
 #   - remote-fs
   loop_control:
     loop_var: service
-- fail:
 - name: Unmount the raw volume
   mount:
     path: "{{ rawmnt }}"

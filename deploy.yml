@@ -10,8 +10,8 @@
     flashmachine: armstrong
     flashdevice: /dev/sdb
     # url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
-    # url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200318.n.0.aarch64.raw.xz
-    url: https://downloads.raspberrypi.org/raspbian_lite_latest
+    url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200318.n.0.aarch64.raw.xz
+    # url: https://downloads.raspberrypi.org/raspbian_lite_latest
   tasks:
     - set_fact:
         archsuffix: arm7vhl
@@ -25,8 +25,7 @@
         name: "{{ role }}"
       loop:
         - image-prep
-#        - armulator
-#        - kernel
+        - armulator
         - image-flash
       loop_control:
         loop_var: role
