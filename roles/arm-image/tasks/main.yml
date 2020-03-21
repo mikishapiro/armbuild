@@ -1,0 +1,5 @@
+---
+# tasks file for arm-image
+- name: Execute the instruction
+  include: "{{ instruction }}.yml"
+

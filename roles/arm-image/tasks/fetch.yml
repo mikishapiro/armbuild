@@ -1,0 +1,27 @@
+---
+- name: "Download the image from {{ url }}"
+  get_url:
+    url: "{{ url }}"
+    dest: "{{ workpath }}/{{ url | basename }}"
+  register: download
+- debug: var=download
+
+- set_fact:
+    extractedfile: "{{ download.dest | regex_replace('.xz') | regex_replace('.zip', '.img') }}"
+- debug: var=extractedfile
+- name: "Check that {{ extractedfile }} exists"
+  stat:
+    path: "{{ extractedfile }}"
+  register: raw_image_stat_result
+
+- name: Extract xz archives
+  command: "unxz -k {{ download.dest }}"
+  when: ( ( lazy == true and raw_image_stat_result.stat.exists == False ) ) and ( url.find("xz") != -1 )
+
+- name: Extract zip archives
+  unarchive:
+    src: "{{ download.dest }}"
+    dest: "{{ workpath }}"
+    keep_newer: true
+  when: url.find("zip") != -1
+...
