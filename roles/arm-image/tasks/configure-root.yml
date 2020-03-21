@@ -1,0 +1,67 @@
+---
+- name: create a .ssh directory
+  file:
+    name: "{{ location }}/root/.ssh"
+    mode: '0700'
+    state: directory
+- name: create a file
+  file:
+    path: "{{ location }}/root/.ssh/authorized_keys"
+    mode: '0600'
+    state: touch
+
+- name: Set appropriate permissions on the authorized_keys file
+  lineinfile:
+    path: "{{ location }}/root/.ssh/authorized_keys"
+    line: "{{ pubkey }}"
+    state: present
+
+- name: Set root password
+  lineinfile:
+    path: "{{ location }}/etc/shadow"
+    state: present
+    line: 'root:{{ rootpasswordhash }}::0:99999:7:::'
+    regexp: '^root:'
+
+- name: Permit root login via ssh
+  lineinfile:
+    path: "{{ location }}/etc/ssh/sshd_config"
+    state: present
+    line: "PermitRootLogin yes"
+    regexp: '^PermitRootLogin'
+
+- name: Copy over raspbian kernel modules
+  command: cp -uvrfp "{{ module_location }}/* {{ location }}/lib/modules"
+# - /etc/sysconfig/network-scripts/ifcfg-eth0
+
+- name: "Deploy the {{ network.device }} network interface configuration"
+  template:
+    src: templates/ifcfg.j2
+    dest: "{{ location }}/etc/sysconfig/network-scripts/ifcfg-{{ network.device }}"
+
+- name: Disable the initial-setup and other unneeded services
+  file:
+    path: "{{ rawmnt }}/etc/systemd/system/multi-user.target.wants/{{ service }}.service"
+    state: absent
+  loop:
+    - initial-setup
+    - abrtd
+    - abrt-journal-core
+    - abrt-oops
+    - abrt-vmcore
+    - abrt-xorg
+    - cups
+    - nfs-client
+    - vboxservice
+    - vmtoolsd
+    - ModemManager
+#   - rngd
+#   - libvirtd
+#   - auditd
+#   - smartd
+#   - avahi-daemon
+#   - remote-fs
+
+# - fix up /etc/fstab
+...
+

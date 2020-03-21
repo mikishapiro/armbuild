@@ -1,4 +1,22 @@
 ---
+- name: "Checking for redirect and setting redcheck.stdout_lines.0 to notredirect or the actual url"
+  shell: 'curl {{ requested_url }} --max-time 5 --max-redirs 0 --silent > /dev/null && curl {{ requested_url }} --max-redirs 0 --silent |grep moved|cut -d\" -f2 || echo notredirect'
+  args:
+    warn: no
+  register: redcheck
+
+- name: "Use the redirect URL {{ redcheck.stdout_lines.0 }} to avoid redownloading large images"
+  set_fact:
+    url: "{{ redcheck.stdout_lines.0 }}"
+  when: redcheck.stdout_lines.0 != "notredirect"
+
+- name: "Else use the requested URL {{ requested_url }}"
+  set_fact:
+    url: "{{ requested_url }}"
+  when: redcheck.stdout_lines.0 == "notredirect"
+
+- debug: var=url
+
 - name: "Download the image from {{ url }}"
   get_url:
     url: "{{ url }}"
@@ -6,7 +24,8 @@
   register: download
 - debug: var=download
 
-- set_fact:
+- name: Set the name of the file that just got extracted
+  set_fact:
     extractedfile: "{{ download.dest | regex_replace('.xz') | regex_replace('.zip', '.img') }}"
 - debug: var=extractedfile
 - name: "Check that {{ extractedfile }} exists"

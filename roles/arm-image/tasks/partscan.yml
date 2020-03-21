@@ -6,7 +6,7 @@
 
 - name: Read device information (always use unit when probing)
   parted:
-    device: "{{ extractedfile }}"
+    device: "{{ image }}"
     unit: B
   register: raw_part
 

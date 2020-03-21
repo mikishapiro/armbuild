@@ -4,16 +4,16 @@
   args:
     warn: no
   register: redcheck
-
+- set_fact:
+    url:
 - name: "Use the redirect URL {{ redcheck.stdout_lines.0 }} to avoid redownloading large images"
   set_stats:
-    data:
-      url: "{{ redcheck.stdout_lines.0 }}"
+    url: "{{ redcheck.stdout_lines.0 }}"
   when: redcheck.stdout_lines.0 != "notredirect"
 
 - name: "Else use the requested URL {{ requested_url }}"
-  set_stats:
-    data:
-      url: "{{ requested_url }}"
+  set_fact:
+    url: "{{ requested_url }}"
   when: redcheck.stdout_lines.0 == "notredirect"
+- debug: var=url
 ...

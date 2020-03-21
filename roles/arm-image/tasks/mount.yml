@@ -1,0 +1,16 @@
+---
+- name: make sure local mount stubs exist
+  file:
+    name: "{{ mountstub }}"
+    mode: '0700'
+    state: directory
+
+- name: mount the main partition
+  mount:
+    src: "{{ image }}"
+    path: "{{ mountstub }}"
+    opts: rw,loop,offset={{ partition.begin | regex_replace('\.0') }}
+    state: mounted
+    fstab: /tmp/fstab.dummy
+    fstype: "{{ partition.fstype | regex_replace('fat32', 'vfat')}}"
+...

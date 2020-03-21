@@ -5,29 +5,138 @@
   vars: 
     dir: /usr/src
     workpath: /var/lib/libvirt/images
-    rawmnt: /mnt/raw
-    bootmnt: /mnt/boot
+    mntroot: /mnt
     flashmachine: armstrong
     flashdevice: /dev/sdb
-    archsuffix: arm7vhl
+    # archsuffix: arm7vhl
     # archsuffix: aarch64
+    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+    raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
+    lazy: true
   tasks:
+
+# Set up Fedora 32
     - name: Download and prep Fedora 32
       vars:
-        fetch: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+        instruction: fetch
+        requested_url: "{{ fedora32_url }}"
       include_role:
-        name: image-prep
-      when: 1 == 2
-
-    - name: Download and prep raspbian
+        name: arm-image
+   
+    - name: "Find boot and root partitions in extracted image {{ extractedfile }}"
       vars:
-        fetch: https://downloads.raspberrypi.org/raspbian_lite_latest
+        instruction: partscan
+        image: "{{ extractedfile }}"
       include_role:
-        name: image-prep
+        name: arm-image
 
-
-    - name: Flash the raspbian image
+    - name: "Mount the root partition"
       vars:
-        fetch: https://downloads.raspberrypi.org/raspbian_lite_latest
+        instruction: mount
+        image: "{{ extractedfile }}"
+        mountstub: "{{ mntroot }}/fedora32/root"
+        partition: "{{ root_partition.0 }}"
       include_role:
-        name: image-flash
+        name: arm-image
+
+    - name: Keep partition table data about the root partition to dump to flash later
+      set_fact:
+        flash_root:
+          image: "{{ extractedfile }}"
+          partition: "{{ root_partition.0 }}"
+
+    - name: Download and prep Raspbian
+      vars:
+        instruction: fetch
+        requested_url: "{{ raspbian_url }}"
+      include_role:
+        name: arm-image
+   
+    - name: "Find boot and root partitions in extracted image {{ extractedfile }}"
+      vars:
+        instruction: partscan
+        image: "{{ extractedfile }}"
+      include_role:
+        name: arm-image
+
+    - name: "Mount the root partition in {{ mntroot }}/raspbian/root"
+      vars:
+        instruction: mount
+        mountstub: "{{ mntroot }}/raspbian/root"
+        image: "{{ extractedfile }}"
+        partition: "{{ root_partition.0 }}"
+      include_role:
+        name: arm-image
+
+    - name: Configure the fedora root filesystem
+      vars:
+        instruction: configure-root
+        location: "{{ mntroot }}/fedora32/root"
+        module_location: "{{ mntroot }}/raspbian/root/lib/modules"
+        network:
+          device: eth0
+          ipaddr: 192.168.6.29
+          prefix: 24
+          gateway: 192.168.6.1
+          dns1: 8.8.8.8
+          bootproto: none
+      include_role:
+        name: arm-image
+
+# 5. Edit Fedora fs.
+# - root password
+# - permit root login
+# - root ssh key
+# - /etc/sysconfig/network-scripts/ifcfg-eth0
+# - /lib/modules from raspbian
+# - kill first boot
+# - fix up /etc/fstab
+
+    - name: Unmount the root filesystems
+      mount:
+        path: "{{ item }}"
+        state: unmounted
+      loop:
+        - "{{ mntroot }}/raspbian/root"
+        - "{{ mntroot }}/fedora32/root"
+
+    - name: "Mount the boot partition in {{ mntroot }}/raspbian/boot"
+      vars:
+        instruction: mount
+        mountstub: "{{ mntroot }}/raspbian/boot"
+        image: "{{ extractedfile }}"
+        partition: "{{ boot_partition.0 }}"
+      include_role:
+        name: arm-image
+
+    - name: Keep partition table data about the boot partition to dump to flash later
+      set_fact:
+        flash_boot:
+          image: "{{ extractedfile }}"
+          partition: "{{ boot_partition.0 }}"
+
+    - name: Perform any required changes to the boot filesystem
+      vars:
+        instruction: configure-boot
+        location: "{{ mntroot }}/raspbian/boot"
+        init: "/sbin/init"
+      include_role:
+        name: arm-image
+
+    - name: Unmount the boot filesystems
+      mount:
+        path: "{{ mntroot }}/raspbian/boot"
+        state: unmounted
+
+    - name: Write to flash
+      vars:
+        instruction: flash
+        flashmachine: "{{ flashmachine }}"
+        flashdevice: "{{ flashdevice }}"
+        boot: "{{ flash_boot }}"
+        root: "{{ flash_root }}"
+      include_role:
+        name: arm-image
+
+# Optional: 8. Expand flash (parted + resize2fs) to fill disk
+...
