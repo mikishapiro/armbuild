@@ -1,7 +1,7 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
   hosts: localhost
-  connection: local
+#  connection: local
   vars: 
     dir: /usr/src
     workpath: /var/lib/libvirt/images
@@ -127,7 +127,7 @@
       vars:
         instruction: flash
         boot_image_file: '{{ flash_boot.image }}'
-        boot_image_skip: '{{ ( flash_boot.partition.begin / dd_blocksize ) | int }}'
+        mbr_blockcount: '{{ ( flash_boot.partition.begin / dd_blocksize ) | int }}'
         boot_blockcount: '{{ ( flash_boot.partition.size / dd_blocksize ) | int }}' 
         root_image_file: '{{ flash_root.image }}'
         root_image_skip: '{{ ( flash_root.partition.begin / dd_blocksize ) | int }}'
