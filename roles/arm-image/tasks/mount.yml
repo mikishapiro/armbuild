@@ -9,7 +9,7 @@
   mount:
     src: "{{ image }}"
     path: "{{ mountstub }}"
-    opts: rw,loop,offset={{ partition.begin | regex_replace('\.0') }}
+    opts: rw,loop,offset={{ partition.begin | int }}
     state: mounted
     fstab: /tmp/fstab.dummy
     fstype: "{{ partition.fstype | regex_replace('fat32', 'vfat')}}"

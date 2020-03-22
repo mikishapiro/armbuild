@@ -135,7 +135,7 @@
   mount:
     src: "{{ extractedfile }}"
     path: "{{ rawmnt }}"
-    opts: rw,loop,offset={{ main_partition.0.begin | regex_replace('\.0') }}
+    opts: rw,loop,offset={{ main_partition.0.begin | int }}
     state: mounted
     fstab: /tmp/fstab.dummy
     fstype: "{{ main_partition.0.fstype | regex_replace('fat32', 'vfat')}}"
@@ -223,7 +223,7 @@
   mount:
     src: "{{ extractedfile }}"
     path: "{{ bootmnt }}"
-    opts: rw,loop,offset={{ boot_partition.0.begin | regex_replace('\.0') }}
+    opts: rw,loop,offset={{ boot_partition.0.begin | int }}
     state: mounted
     fstab: /tmp/fstab.dummy
     fstype: "{{ boot_partition.0.fstype | regex_replace('fat32', 'vfat') }}"
