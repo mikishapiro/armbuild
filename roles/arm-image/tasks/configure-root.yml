@@ -30,9 +30,21 @@
     line: "PermitRootLogin yes"
     regexp: '^PermitRootLogin'
 
+- name: Replace root line in fstab
+  lineinfile:
+    path: "{{ location }}/etc/fstab"
+    state: present
+    line: "/dev/mmcblk0p2 / xfs defaults,noatime 0 0"
+    regexp: '^.* / .*'
+
+- name: Remove boot and boot/efi lines in fstab
+  lineinfile:
+    path: "{{ location }}/etc/fstab"
+    state: absent
+    regexp: '^.* /boot.*'
+
 - name: Copy over raspbian kernel modules
-  command: cp -uvrfp "{{ module_location }}/* {{ location }}/lib/modules"
-# - /etc/sysconfig/network-scripts/ifcfg-eth0
+  command: "cp -uvrfp {{ module_location }} {{ location }}/usr/lib"
 
 - name: "Deploy the {{ network.device }} network interface configuration"
   template:
@@ -41,7 +53,7 @@
 
 - name: Disable the initial-setup and other unneeded services
   file:
-    path: "{{ rawmnt }}/etc/systemd/system/multi-user.target.wants/{{ service }}.service"
+    path: "{{ location }}/etc/systemd/system/multi-user.target.wants/{{ item }}.service"
     state: absent
   loop:
     - initial-setup

@@ -13,6 +13,7 @@
     fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
+    dd_blocksize: 524288
   tasks:
 
 # Set up Fedora 32
@@ -83,15 +84,6 @@
       include_role:
         name: arm-image
 
-# 5. Edit Fedora fs.
-# - root password
-# - permit root login
-# - root ssh key
-# - /etc/sysconfig/network-scripts/ifcfg-eth0
-# - /lib/modules from raspbian
-# - kill first boot
-# - fix up /etc/fstab
-
     - name: Unmount the root filesystems
       mount:
         path: "{{ item }}"
@@ -128,13 +120,18 @@
         path: "{{ mntroot }}/raspbian/boot"
         state: unmounted
 
+    - debug: var=flash_boot
+    - debug: var=flash_root
+
     - name: Write to flash
       vars:
         instruction: flash
-        flashmachine: "{{ flashmachine }}"
-        flashdevice: "{{ flashdevice }}"
-        boot: "{{ flash_boot }}"
-        root: "{{ flash_root }}"
+        boot_image_file: '{{ flash_boot.image }}'
+        boot_image_skip: '{{ ( flash_boot.partition.begin / dd_blocksize ) | int }}'
+        boot_blockcount: '{{ ( flash_boot.partition.size / dd_blocksize ) | int }}' 
+        root_image_file: '{{ flash_root.image }}'
+        root_image_skip: '{{ ( flash_root.partition.begin / dd_blocksize ) | int }}'
+        root_blockcount: '{{ ( flash_root.partition.size / dd_blocksize ) | int }}' 
       include_role:
         name: arm-image
 

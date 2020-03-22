@@ -1,0 +1,21 @@
+---
+# tasks file for image-flash
+
+- name: Read raw file internal partition information 
+  parted:
+    device: "{{ flashdevice }}"
+    unit: B
+  delegate_to: "{{ flashmachine }}"
+  register: raw_part
+
+- name: stream the image to the flashmachine and write it
+  shell: '( dd if={{ boot_image_file }} skip={{ boot_image_skip }} bs={{ dd_blocksize }} count={{ boot_blockcount }} ; dd if={{ root_image_file }} skip={{ root_image_skip }} bs={{ dd_blocksize }} count={{ root_blockcount }}) | ssh {{ flashmachine }} dd of={{ flashdevice }} bs={{ dd_blocksize }}'
+#  shell: "bash -c '( dd if={{ boot_image_file }} skip={{ boot_image_skip }} bs={{ dd_blocksize }} count={{ boot_blockcount }} ; dd if={{ root_image_file }} skip={{ root_image_skip }} bs={{ dd_blocksize }} count={{ root_blockcount }}) | ssh {{ flashmachine }} dd of={{ flashdevice }} bs={{ dd_blocksize }}'"
+
+- name: Read raw file internal partition information 
+  parted:
+    device: "{{ flashdevice }}"
+    unit: B
+  delegate_to: "{{ flashmachine }}"
+  register: raw_part
+- debug: var=raw_part

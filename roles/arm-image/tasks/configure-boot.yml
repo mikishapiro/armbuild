@@ -1,0 +1,7 @@
+- name: Replace root line in fstab
+  lineinfile:
+    path: "{{ location }}/cmdline.txt"
+    state: present
+    line: "console=serial0,115200 console=tty1 root=PARTUUID=738a4d67-02 rootfstype=xfs elevator=deadline fsck.repair=yes rootwait quiet init=/sbin/init"
+    regexp: 'console=.*'
+

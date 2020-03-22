@@ -28,7 +28,7 @@
   set_fact:
     extractedfile: "{{ download.dest | regex_replace('.xz') | regex_replace('.zip', '.img') }}"
 - debug: var=extractedfile
-- name: "Check that {{ extractedfile }} exists"
+- name: "Ensure that {{ extractedfile }} exists"
   stat:
     path: "{{ extractedfile }}"
   register: raw_image_stat_result
