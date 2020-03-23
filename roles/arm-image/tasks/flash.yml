@@ -1,21 +1,99 @@
 ---
 # tasks file for image-flash
 
+# using {{ dd_blocksize }} blocks (tested with 512K blocks represented numerically as 524288)
+# {{ mbr }}, {{ boot }} and {{ root }} have the following structure
+# mbr|boot|root:
+#   image: path to image file
+#   partition:
+#     begin: first byte (represented with one digit past decimal point. must be run through int for seeks and additive math.)
+#     end: last byte (represented with one digit past decimal point. must be run through int for seeks and additive math.)
+#     size: size in bytes (represented with one digit past decimal point. must be run through int for seeks and additive math.)
+# note
+#
+# due to addressging starting at zero, begin and size will be even and dividable by blocksize to convert to a blocks figure.
+# end will be odd and requires 1 be added to it before dividing by blocksize to be converted to a blocks figure.
 - name: Read raw file internal partition information 
   parted:
-    device: "{{ flashdevice }}"
+    device: "{{ target.device }}"
     unit: B
-  delegate_to: "{{ flashmachine }}"
+  delegate_to: "{{ target.machine }}"
   register: raw_part
+- name: isolate the mbr to a separate file
+  shell: "dd if={{ mbr.image }} bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.temp"
+- name: pad it to the combined size of the partitions
+  shell: "dd if=/dev/zero bs=1 count=1 seek={{ ( mbr.partition.size|int + boot.partition.size|int + root.partition.size|int -1 )|int }} of={{ mbr.image }}.temp"
 
-- name: stream the image to the flashmachine and write it
-  shell: '( dd if={{ boot_image_file }} bs={{ dd_blocksize }} count={{ mbr_blockcount + boot_blockcount }} ; dd if={{ root_image_file }} skip={{ root_image_skip }} bs={{ dd_blocksize }} count={{ root_blockcount }}) | ssh {{ flashmachine }} dd of={{ flashdevice }} bs={{ dd_blocksize }}'
-#  shell: "bash -c '( dd if={{ boot_image_file }} skip={{ boot_image_skip }} bs={{ dd_blocksize }} count={{ boot_blockcount }} ; dd if={{ root_image_file }} skip={{ root_image_skip }} bs={{ dd_blocksize }} count={{ root_blockcount }}) | ssh {{ flashmachine }} dd of={{ flashdevice }} bs={{ dd_blocksize }}'"
-
-- name: Read raw file internal partition information 
+- name: Remove partition number 2
   parted:
-    device: "{{ flashdevice }}"
-    unit: B
-  delegate_to: "{{ flashmachine }}"
-  register: raw_part
-- debug: var=raw_part
+    device: "{{ mbr.image }}.temp"
+    number: 2
+    state: absent
+
+- name: Define the new root partition
+  parted:
+    device: "{{ mbr.image }}.temp"
+    number: 2
+    state: present
+    part_start: "{{ ((mbr.partition.size|int + boot.partition.size|int)|int/1024)|int }}KiB"
+ #  part_end: "{{ ((mbr.partition.size|int + boot.partition.size|int + root.partition.size|int)|int/1024)|int }}KiB"
+
+- name: isolate the mbr to a separate file
+  shell: "dd if={{ mbr.image }}.temp bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.mbr"
+
+- name: Display parameters provided
+  debug:
+    var: "{{ item }}"
+  loop:
+    - mbr
+    - boot
+    - root
+    - dd_blocksize
+    - target
+
+- name: "stream the mbr boot and root images to {{ target.machine }} and dd them to {{ target.device }}"
+  shell: '( dd if={{ mbr.image }}.mbr bs={{ dd_blocksize }} | tee /var/lib/libvirt/images/mbr ; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} |tee /var/lib/libvirt/images/sdb1 ; dd if={{ root.image }} skip={{ (root.partition.begin|int/dd_blocksize)|int }} bs={{ dd_blocksize }} count={{ (root.partition.size|int/dd_blocksize)|int }} |tee /var/lib/libvirt/images/sdb2 ) | ssh {{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
+- name: test1
+  shell: "( cat {{ mbr.image }}.mbr ; cat  /var/lib/libvirt/images/sdb1 ; cat  /var/lib/libvirt/images/sdb2 ) |md5sum"
+
+- name: test2
+  shell: "( cat {{ mbr.image }}.mbr ; cat  /var/lib/libvirt/images/sdb1 ; cat  /var/lib/libvirt/images/sdb2 ) |ssh {{ target.machine }} md5sum"
+
+- name: test3
+  shell: "ssh {{ target.machine }} dd if={{ target.device }} count={{ (( mbr.partition.size|int + boot.partition.size|int + root.partition.size|int)|int/dd_blocksize)|int }} bs={{ dd_blocksize }} | md5sum"
+# - fail: 
+# - name: "stream the mbr boot and root images to {{ target.machine }} and dd them to {{ target.device }}"
+#   shell: '( dd if={{ mbr.image }},mbr bs={{ dd_blocksize }} ; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ; dd if={{ root.image }} skip={{ (root.partition.begin|int/dd_blocksize)|int }} bs={{ dd_blocksize }} count={{ (root.partition.size|int/dd_blocksize)|int }} ) | ssh {{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
+
+# - name: Read raw file internal partition information 
+#  parted:
+#   device: "{{ target.device }}"
+#   unit: B
+# delegate_to: "{{ target.machine }}"
+# register: raw_part
+# - debug: var=raw_part
+
+ #- name: test4a - check the md5sum of the boot
+ #  shell: 'dd if=/dev/sdb1 bs={{ dd_blocksize }} |md5sum'
+ #  delegate_to: "{{ target.machine }}"
+ # #
+ #- name: test4b - check the md5sum of the boot
+ # #  shell: 'dd if=/dev/sdb1 bs={{ dd_blocksize }} |wc -c'
+ #  delegate_to: "{{ target.machine }}"
+
+
+ #- name: test5a - check the md5sum of the boot
+ #  shell: 'dd if=/dev/sdb2 bs={{ dd_blocksize }} |md5sum'
+ #  delegate_to: "{{ target.machine }}"
+ #
+ #- name: test5b - check the md5sum of the boot
+ #  shell: 'dd if=/dev/sdb2 bs={{ dd_blocksize }} |wc -c'
+ #  delegate_to: "{{ target.machine }}"
+
+
+#- name: Extend filesystem to cover entire disk
+#  delegate_to: "{{ target.machine }}"
+#  filesystem:
+#    dev: "{{ target.device }}2"
+#    fstype: xfs
+#    resizefs: yes

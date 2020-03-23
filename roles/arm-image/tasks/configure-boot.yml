@@ -4,4 +4,3 @@
     state: present
     line: "console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=xfs elevator=deadline fsck.repair=yes rootwait quiet init=/sbin/init"
     regexp: 'console=.*'
-

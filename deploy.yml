@@ -6,14 +6,15 @@
     dir: /usr/src
     workpath: /var/lib/libvirt/images
     mntroot: /mnt
-    flashmachine: armstrong
-    flashdevice: /dev/sdb
+    target:
+      machine: armstrong
+      device: /dev/sdb
+    dd_blocksize: 524288
     # archsuffix: arm7vhl
     # archsuffix: aarch64
     fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
-    dd_blocksize: 524288
   tasks:
 
 # Set up Fedora 32
@@ -83,7 +84,6 @@
           bootproto: none
       include_role:
         name: arm-image
-
     - name: Unmount the root filesystems
       mount:
         path: "{{ item }}"
@@ -107,6 +107,15 @@
           image: "{{ extractedfile }}"
           partition: "{{ boot_partition.0 }}"
 
+    - name: Keep partition table data about the boot partition to dump to flash later
+      set_fact:
+        flash_mbr:
+          image: "{{ extractedfile }}"
+          partition:
+            begin: 0
+            end: "{{ (flash_boot.partition.begin|int - 1) }}"
+            size: "{{ flash_boot.partition.begin }}"
+
     - name: Perform any required changes to the boot filesystem
       vars:
         instruction: configure-boot
@@ -126,12 +135,9 @@
     - name: Write to flash
       vars:
         instruction: flash
-        boot_image_file: '{{ flash_boot.image }}'
-        mbr_blockcount: '{{ ( flash_boot.partition.begin / dd_blocksize ) | int }}'
-        boot_blockcount: '{{ ( flash_boot.partition.size / dd_blocksize ) | int }}' 
-        root_image_file: '{{ flash_root.image }}'
-        root_image_skip: '{{ ( flash_root.partition.begin / dd_blocksize ) | int }}'
-        root_blockcount: '{{ ( flash_root.partition.size / dd_blocksize ) | int }}' 
+        mbr: '{{ flash_mbr }}'
+        boot: '{{ flash_boot }}'
+        root: '{{ flash_root }}'
       include_role:
         name: arm-image
 
