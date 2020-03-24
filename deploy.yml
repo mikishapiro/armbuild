@@ -41,11 +41,6 @@
       include_role:
         name: arm-image
 
-    - name: Keep partition table data about the root partition to dump to flash later
-      set_fact:
-        flash_root:
-          image: "{{ extractedfile }}"
-          partition: "{{ root_partition.0 }}"
 
     - name: Download and prep Raspbian
       vars:
@@ -61,6 +56,12 @@
       include_role:
         name: arm-image
 
+    - name: Keep partition table data about the root partition to dump to flash later
+      set_fact:
+        flash_root:
+          image: "{{ extractedfile }}"
+          partition: "{{ root_partition.0 }}"
+
     - name: "Mount the root partition in {{ mntroot }}/raspbian/root"
       vars:
         instruction: mount
@@ -69,28 +70,27 @@
         partition: "{{ root_partition.0 }}"
       include_role:
         name: arm-image
-
     - name: Configure the fedora root filesystem
       vars:
         instruction: configure-root
         location: "{{ mntroot }}/fedora32/root"
-        module_location: "{{ mntroot }}/raspbian/root/lib/modules"
+        raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
           device: eth0
-          ipaddr: 192.168.6.29
+          ipaddr: 192.168.5.7
           prefix: 24
-          gateway: 192.168.6.1
+          gateway: 192.168.5.1
           dns1: 8.8.8.8
           bootproto: none
       include_role:
-        name: arm-image
+        name: arm-image  
     - name: Unmount the root filesystems
       mount:
         path: "{{ item }}"
         state: unmounted
       loop:
         - "{{ mntroot }}/raspbian/root"
-        - "{{ mntroot }}/fedora32/root"
+   #     - "{{ mntroot }}/fedora32/root"
 
     - name: "Mount the boot partition in {{ mntroot }}/raspbian/boot"
       vars:
@@ -126,8 +126,10 @@
 
     - name: Unmount the boot filesystems
       mount:
-        path: "{{ mntroot }}/raspbian/boot"
+        path: "{{ item }}"
         state: unmounted
+      loop:
+        - "{{ mntroot }}/raspbian/boot"
 
     - debug: var=flash_boot
     - debug: var=flash_root
@@ -141,5 +143,10 @@
       include_role:
         name: arm-image
 
-# Optional: 8. Expand flash (parted + resize2fs) to fill disk
+    - name: Unmount the boot filesystems
+      mount:
+        path: "{{ item }}"
+        state: unmounted
+      loop:
+        - "{{ mntroot }}/fedora32/root"
 ...

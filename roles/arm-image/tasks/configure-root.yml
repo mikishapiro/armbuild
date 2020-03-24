@@ -44,7 +44,10 @@
     regexp: '^.* /boot.*'
 
 - name: Copy over raspbian kernel modules
-  command: "cp -uvrfp {{ module_location }} {{ location }}/usr/lib"
+  command: "cp -uvrfp {{ raspbian_location }}/lib/modules {{ location }}/usr/lib"
+
+- name: Copy over raspbian kernel modules
+  command: 'cp -uvrfp {{ raspbian_location }}/etc/modprobe.d/. {{ location }}/etc/modprobe.d/'
 
 - name: "Deploy the {{ network.device }} network interface configuration"
   template:
@@ -67,12 +70,12 @@
     - vboxservice
     - vmtoolsd
     - ModemManager
-#   - rngd
-#   - libvirtd
-#   - auditd
-#   - smartd
-#   - avahi-daemon
-#   - remote-fs
+    - rngd
+    - avahi-daemon
+    - auditd
+    - smartd
+    - libvirtd
+    - remote-fs
 
 # - fix up /etc/fstab
 ...

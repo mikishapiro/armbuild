@@ -13,34 +13,6 @@
 #
 # due to addressging starting at zero, begin and size will be even and dividable by blocksize to convert to a blocks figure.
 # end will be odd and requires 1 be added to it before dividing by blocksize to be converted to a blocks figure.
-- name: Read raw file internal partition information 
-  parted:
-    device: "{{ target.device }}"
-    unit: B
-  delegate_to: "{{ target.machine }}"
-  register: raw_part
-- name: isolate the mbr to a separate file
-  shell: "dd if={{ mbr.image }} bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.temp"
-- name: pad it to the combined size of the partitions
-  shell: "dd if=/dev/zero bs=1 count=1 seek={{ ( mbr.partition.size|int + boot.partition.size|int + root.partition.size|int -1 )|int }} of={{ mbr.image }}.temp"
-
-- name: Remove partition number 2
-  parted:
-    device: "{{ mbr.image }}.temp"
-    number: 2
-    state: absent
-
-- name: Define the new root partition
-  parted:
-    device: "{{ mbr.image }}.temp"
-    number: 2
-    state: present
-    part_start: "{{ ((mbr.partition.size|int + boot.partition.size|int)|int/1024)|int }}KiB"
- #  part_end: "{{ ((mbr.partition.size|int + boot.partition.size|int + root.partition.size|int)|int/1024)|int }}KiB"
-
-- name: isolate the mbr to a separate file
-  shell: "dd if={{ mbr.image }}.temp bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.mbr"
-
 - name: Display parameters provided
   debug:
     var: "{{ item }}"
@@ -51,49 +23,69 @@
     - dd_blocksize
     - target
 
-- name: "stream the mbr boot and root images to {{ target.machine }} and dd them to {{ target.device }}"
-  shell: '( dd if={{ mbr.image }}.mbr bs={{ dd_blocksize }} | tee /var/lib/libvirt/images/mbr ; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} |tee /var/lib/libvirt/images/sdb1 ; dd if={{ root.image }} skip={{ (root.partition.begin|int/dd_blocksize)|int }} bs={{ dd_blocksize }} count={{ (root.partition.size|int/dd_blocksize)|int }} |tee /var/lib/libvirt/images/sdb2 ) | ssh {{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
-- name: test1
-  shell: "( cat {{ mbr.image }}.mbr ; cat  /var/lib/libvirt/images/sdb1 ; cat  /var/lib/libvirt/images/sdb2 ) |md5sum"
+- name: Wipe out the first 300MB of the target disk to avoid parted complaints
+  delegate_to: "{{ target.machine }}"
+  shell: "dd if=/dev/zero of={{ target.device }} bs=1M count=300"
+ 
+# - name: isolate the mbr to a separate file
+#  shell: "dd if={{ mbr.image }} bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.mbr"
 
-- name: test2
-  shell: "( cat {{ mbr.image }}.mbr ; cat  /var/lib/libvirt/images/sdb1 ; cat  /var/lib/libvirt/images/sdb2 ) |ssh {{ target.machine }} md5sum"
+- name: "stream the mbr boot images to {{ target.machine }} and dd them to {{ target.device }}"
+  shell: '( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | ssh {{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
 
-- name: test3
-  shell: "ssh {{ target.machine }} dd if={{ target.device }} count={{ (( mbr.partition.size|int + boot.partition.size|int + root.partition.size|int)|int/dd_blocksize)|int }} bs={{ dd_blocksize }} | md5sum"
-# - fail: 
-# - name: "stream the mbr boot and root images to {{ target.machine }} and dd them to {{ target.device }}"
-#   shell: '( dd if={{ mbr.image }},mbr bs={{ dd_blocksize }} ; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ; dd if={{ root.image }} skip={{ (root.partition.begin|int/dd_blocksize)|int }} bs={{ dd_blocksize }} count={{ (root.partition.size|int/dd_blocksize)|int }} ) | ssh {{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
+- name: "Remove partition number 2 in the staged mbr file {{ mbr.image }}.mbr"
+  delegate_to: "{{ target.machine }}"
+  parted:
+    device: "{{ target.device }}"
+    number: 2
+    state: absent
+- name: Create a second root partition on the target device using all remaining disk
+  delegate_to: "{{ target.machine }}"
+  parted:
+    device: "{{ target.device }}"
+    number: 2
+    state: present
+    part_start: "{{ ((mbr.partition.size|int + boot.partition.size|int)|int/1024)|int }}KiB"
 
-# - name: Read raw file internal partition information 
-#  parted:
-#   device: "{{ target.device }}"
-#   unit: B
-# delegate_to: "{{ target.machine }}"
-# register: raw_part
-# - debug: var=raw_part
+- name: "Create a filesystem on partition {{ target.device }}2 on {{ target.machine }}"
+  delegate_to: "{{ target.machine }}"
+  filesystem:
+    dev: "{{ target.device }}2"
+    fstype: ext4
 
- #- name: test4a - check the md5sum of the boot
- #  shell: 'dd if=/dev/sdb1 bs={{ dd_blocksize }} |md5sum'
- #  delegate_to: "{{ target.machine }}"
- # #
- #- name: test4b - check the md5sum of the boot
- # #  shell: 'dd if=/dev/sdb1 bs={{ dd_blocksize }} |wc -c'
- #  delegate_to: "{{ target.machine }}"
+- name: make sure local mount stubs exist
+  delegate_to: "{{ target.machine }}"
+  file:
+    name: "{{ mntroot }}/fedora32/root"
+    mode: '0700'
+    state: directory
 
+- name: "mount the remote to-be raspberry root partition on {{ target.machine }}"
+  delegate_to: "{{ target.machine }}"
+  mount:
+    src: "{{ target.device }}2"
+    path: "{{ mntroot }}/fedora32/root"
+    state: mounted
+    fstab: /tmp/fstab.dummy
+    fstype: "ext4"
 
- #- name: test5a - check the md5sum of the boot
- #  shell: 'dd if=/dev/sdb2 bs={{ dd_blocksize }} |md5sum'
- #  delegate_to: "{{ target.machine }}"
- #
- #- name: test5b - check the md5sum of the boot
- #  shell: 'dd if=/dev/sdb2 bs={{ dd_blocksize }} |wc -c'
- #  delegate_to: "{{ target.machine }}"
+- name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
+  shell: "tar cfp - . | ssh {{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
+  args:
+    chdir: "{{ mntroot }}/fedora32/root"
 
+# - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
+#   shell: "chown 755 {{ mntroot }}/fedora32/root"
 
-#- name: Extend filesystem to cover entire disk
-#  delegate_to: "{{ target.machine }}"
-#  filesystem:
-#    dev: "{{ target.device }}2"
-#    fstype: xfs
-#    resizefs: yes
+- name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
+  delegate_to: "{{ target.machine }}"
+  file:
+    path: "{{ mntroot }}/fedora32/root"
+    state: directory
+    mode: '0755'
+
+- name: Unmount the remote target filesystem
+  delegate_to: "{{ target.machine }}"
+  mount:
+    path: "{{ mntroot }}/fedora32/root"
+    state: unmounted
