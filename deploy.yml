@@ -1,6 +1,6 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
-  hosts: localhost
+  hosts: builders
 #  connection: local
   vars: 
     dir: /usr/src
@@ -13,7 +13,7 @@
     # archsuffix: arm7vhl
     # archsuffix: aarch64
     # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
-    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200324.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200324.n.0.aarch64.raw.xz
+    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
     # raspbian_url: https://drive.google.com/file/d/1CJhbPZuDtyi1Giahmaigpk81Qas5dDaE/view?usp=sharing
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
@@ -146,6 +146,9 @@
     - debug: var=flash_boot
     - debug: var=flash_root
 
+- name: Play to write to flash
+  hosts: flashers
+  tasks:
     - name: Write to flash
       vars:
         instruction: flash
