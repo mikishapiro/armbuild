@@ -4,7 +4,7 @@
 #  connection: local
   vars: 
     dir: /usr/src
-    workpath: /var/lib/libvirt/images
+    workpath: ~/armbuild/work
     mntroot: /mnt
     target:
       machine: armstrong
