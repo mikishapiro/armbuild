@@ -1,3 +1,0 @@
----
-# vars file for image-prep
-kernelpath: "{{ workpath }}/kernels/{{ url | basename}}/"
