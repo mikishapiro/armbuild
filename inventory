@@ -1,7 +1,7 @@
 [builders]
-workpath=/home/builder/src/armbuild/work
 builder1
 [builders:vars]
+workpath=/home/builder/src/armbuild/work
 [flashers]
 flasher1
 [flashers:vars]
