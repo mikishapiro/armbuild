@@ -1,5 +1,0 @@
-- name: Extract the kernel and initramfs from the image
-  command: "virt-builder --get-kernel {{ extractedfile }}"
-  args:
-      chdir: "{{ kernelpath }}"
-  register: virt_builder_output

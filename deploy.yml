@@ -12,7 +12,9 @@
     dd_blocksize: 524288
     # archsuffix: arm7vhl
     # archsuffix: aarch64
-    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+    # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200324.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200324.n.0.aarch64.raw.xz
+    # raspbian_url: https://drive.google.com/file/d/1CJhbPZuDtyi1Giahmaigpk81Qas5dDaE/view?usp=sharing
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
   tasks:
@@ -32,7 +34,7 @@
       include_role:
         name: arm-image
 
-    - name: "Mount the root partition"
+    - name: "Mount non-lvm fedora partition"
       vars:
         instruction: mount
         image: "{{ extractedfile }}"
@@ -40,7 +42,17 @@
         partition: "{{ root_partition.0 }}"
       include_role:
         name: arm-image
-
+      when: lvm != true
+   
+    - name: "Mount lvm fedora partition"
+      vars:
+        image: "/dev/fedora/root"
+        instruction: mount
+        mountstub: "{{ mntroot }}/fedora32/root"
+        partition: "{{ root_partition.0 }}"
+      include_role:
+        name: arm-image
+      when: lvm == true
 
     - name: Download and prep Raspbian
       vars:
@@ -62,7 +74,7 @@
           image: "{{ extractedfile }}"
           partition: "{{ root_partition.0 }}"
 
-    - name: "Mount the root partition in {{ mntroot }}/raspbian/root"
+    - name: "Mount non-lvm root partition in {{ mntroot }}/raspbian/root"
       vars:
         instruction: mount
         mountstub: "{{ mntroot }}/raspbian/root"
@@ -70,6 +82,7 @@
         partition: "{{ root_partition.0 }}"
       include_role:
         name: arm-image
+
     - name: Configure the fedora root filesystem
       vars:
         instruction: configure-root
@@ -77,9 +90,9 @@
         raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
           device: eth0
-          ipaddr: 192.168.5.7
+          ipaddr: 192.168.1.26
           prefix: 24
-          gateway: 192.168.5.1
+          gateway: 192.168.1.1
           dns1: 8.8.8.8
           bootproto: none
       include_role:
@@ -90,7 +103,6 @@
         state: unmounted
       loop:
         - "{{ mntroot }}/raspbian/root"
-   #     - "{{ mntroot }}/fedora32/root"
 
     - name: "Mount the boot partition in {{ mntroot }}/raspbian/boot"
       vars:
@@ -107,7 +119,7 @@
           image: "{{ extractedfile }}"
           partition: "{{ boot_partition.0 }}"
 
-    - name: Keep partition table data about the boot partition to dump to flash later
+    - name: Keep partition table data about the master boot record to dump to flash later
       set_fact:
         flash_mbr:
           image: "{{ extractedfile }}"

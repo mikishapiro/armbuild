@@ -1,3 +1,0 @@
----
-# vars file for armulator
-kernelpath: "{{ workpath }}/kernels/{{ url | basename}}/"

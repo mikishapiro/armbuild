@@ -29,15 +29,30 @@
       - "{{ raw_part.partitions|last }}"
   when: lvm != true
 
+- name: Install the image handling packages
+  package:
+    name: 
+      - kpartx
+    state: latest
+  when: lvm == true
+
+- name: Invoke kparts to make lvm partitions in raw image file visible to lvm
+  command: "kpartx -av {{ image }}"
+  when: lvm == true
+  register: kpartx_output
+
 - name: Set the rootpart if fedora aarch64 lvm is used
   set_fact:
     root_partition:
-      - "/dev/fedora/root"
+      - begin: "0"
+        fstype: "xfs"
   when: lvm == true
 
 - set_fact:
     remaining_parts: "{{ raw_part.partitions | difference( root_partition ) }}"
+  when: lvm != true
 
 - set_fact:
     boot_partition: 
       - "{{ remaining_parts|last }}"
+  when: lvm != true

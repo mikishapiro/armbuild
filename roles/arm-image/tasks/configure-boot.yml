@@ -1,7 +1,14 @@
-- name: Replace root line in fstab
+- name: Replace kernel parameters line in cmdline.txt
   lineinfile:
     path: "{{ location }}/cmdline.txt"
     state: present
     line: "console=serial0,115200 console=tty1 root=PARTUUID=738a4d67-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet"
     #line: "console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet"
     regexp: 'console=.*'
+- name: Use the aarch kernel for aarch64 fedora
+  lineinfile:
+    path: "{{ location }}/config.txt"
+    state: present
+    line: "arm_64bit=1"
+    regexp: 'arm_64bit=.*'
+  when: fedora32_url.find("aarch64") != -1
