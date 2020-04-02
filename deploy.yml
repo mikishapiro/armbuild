@@ -1,16 +1,15 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
-  hosts: localhost
+  hosts: builder1
 #  connection: local
   vars: 
     dir: /usr/src
     workpath: /var/lib/libvirt/images
     mntroot: /mnt
-    flashmachine: armstrong
+    flashmachine: flasher
     flashdevice: /dev/sdb
-    # archsuffix: arm7vhl
-    # archsuffix: aarch64
-    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+    # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
     dd_blocksize: 524288
@@ -123,6 +122,11 @@
     - debug: var=flash_boot
     - debug: var=flash_root
 
+- name: Play to write to flash 
+  hosts: flasher1
+  vars: 
+    source: builder1
+  tasks:
     - name: Write to flash
       vars:
         instruction: flash
@@ -134,6 +138,4 @@
         root_blockcount: '{{ ( flash_root.partition.size / dd_blocksize ) | int }}' 
       include_role:
         name: arm-image
-
-# Optional: 8. Expand flash (parted + resize2fs) to fill disk
 ...

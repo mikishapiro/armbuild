@@ -1,7 +1,15 @@
-[pi]
-[pi:vars]
+[builders]
+#[builders:vars]
 # url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
 # url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200318.n.0.aarch64.raw.xz
 # url=https://downloads.raspberrypi.org/raspbian_lite_latest
-[pi:children]
-localhost
+#workpath=/home/builder/src/armbuild/work
+builder1
+
+[flashers]
+#[flashers:vars]
+# url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+# url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/aarch64/images/Fedora-Server-32-20200318.n.0.aarch64.raw.xz
+# url=https://downloads.raspberrypi.org/raspbian_lite_latest
+#workpath=/home/builder/src/armbuild/work
+flasher1
