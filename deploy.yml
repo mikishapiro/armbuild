@@ -1,18 +1,19 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
-  hosts: builder1
+  hosts: builders
 #  connection: local
   vars: 
     dir: /usr/src
     workpath: /var/lib/libvirt/images
     mntroot: /mnt
-    flashmachine: flasher
-    flashdevice: /dev/sdb
+    target:
+      machine: armstrong
+      device: /dev/sdb
+    dd_blocksize: 524288
     # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
     fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
-    dd_blocksize: 524288
   tasks:
 
 # Set up Fedora 32
@@ -30,7 +31,7 @@
       include_role:
         name: arm-image
 
-    - name: "Mount the root partition"
+    - name: "Mount non-lvm fedora partition"
       vars:
         instruction: mount
         image: "{{ extractedfile }}"
@@ -38,12 +39,17 @@
         partition: "{{ root_partition.0 }}"
       include_role:
         name: arm-image
-
-    - name: Keep partition table data about the root partition to dump to flash later
-      set_fact:
-        flash_root:
-          image: "{{ extractedfile }}"
-          partition: "{{ root_partition.0 }}"
+      when: lvm != true
+   
+    - name: "Mount lvm fedora partition"
+      vars:
+        image: "/dev/fedora/root"
+        instruction: mount
+        mountstub: "{{ mntroot }}/fedora32/root"
+        partition: "{{ root_partition.0 }}"
+      include_role:
+        name: arm-image
+      when: lvm == true
 
     - name: Download and prep Raspbian
       vars:
@@ -59,7 +65,13 @@
       include_role:
         name: arm-image
 
-    - name: "Mount the root partition in {{ mntroot }}/raspbian/root"
+    - name: Keep partition table data about the root partition to dump to flash later
+      set_fact:
+        flash_root:
+          image: "{{ extractedfile }}"
+          partition: "{{ root_partition.0 }}"
+
+    - name: "Mount non-lvm root partition in {{ mntroot }}/raspbian/root"
       vars:
         instruction: mount
         mountstub: "{{ mntroot }}/raspbian/root"
@@ -72,24 +84,22 @@
       vars:
         instruction: configure-root
         location: "{{ mntroot }}/fedora32/root"
-        module_location: "{{ mntroot }}/raspbian/root/lib/modules"
+        raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
           device: eth0
-          ipaddr: 192.168.6.29
+          ipaddr: 192.168.1.26
           prefix: 24
-          gateway: 192.168.6.1
+          gateway: 192.168.1.1
           dns1: 8.8.8.8
           bootproto: none
       include_role:
-        name: arm-image
-
+        name: arm-image  
     - name: Unmount the root filesystems
       mount:
         path: "{{ item }}"
         state: unmounted
       loop:
         - "{{ mntroot }}/raspbian/root"
-        - "{{ mntroot }}/fedora32/root"
 
     - name: "Mount the boot partition in {{ mntroot }}/raspbian/boot"
       vars:
@@ -106,6 +116,15 @@
           image: "{{ extractedfile }}"
           partition: "{{ boot_partition.0 }}"
 
+    - name: Keep partition table data about the master boot record to dump to flash later
+      set_fact:
+        flash_mbr:
+          image: "{{ extractedfile }}"
+          partition:
+            begin: 0
+            end: "{{ (flash_boot.partition.begin|int - 1) }}"
+            size: "{{ flash_boot.partition.begin }}"
+
     - name: Perform any required changes to the boot filesystem
       vars:
         instruction: configure-boot
@@ -116,26 +135,31 @@
 
     - name: Unmount the boot filesystems
       mount:
-        path: "{{ mntroot }}/raspbian/boot"
+        path: "{{ item }}"
         state: unmounted
+      loop:
+        - "{{ mntroot }}/raspbian/boot"
 
     - debug: var=flash_boot
     - debug: var=flash_root
 
-- name: Play to write to flash 
-  hosts: flasher1
+- name: Play to write to flash
+  hosts: flashers
   vars: 
     source: builder1
   tasks:
     - name: Write to flash
       vars:
         instruction: flash
-        boot_image_file: '{{ flash_boot.image }}'
-        mbr_blockcount: '{{ ( flash_boot.partition.begin / dd_blocksize ) | int }}'
-        boot_blockcount: '{{ ( flash_boot.partition.size / dd_blocksize ) | int }}' 
-        root_image_file: '{{ flash_root.image }}'
-        root_image_skip: '{{ ( flash_root.partition.begin / dd_blocksize ) | int }}'
-        root_blockcount: '{{ ( flash_root.partition.size / dd_blocksize ) | int }}' 
+        mbr: '{{ flash_mbr }}'
+        boot: '{{ flash_boot }}'
+        root: '{{ flash_root }}'
       include_role:
         name: arm-image
+    - name: Unmount the boot filesystems
+      mount:
+        path: "{{ item }}"
+        state: unmounted
+      loop:
+        - "{{ mntroot }}/fedora32/root"
 ...
