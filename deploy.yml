@@ -10,11 +10,8 @@
       machine: armstrong
       device: /dev/sdb
     dd_blocksize: 524288
-    # archsuffix: arm7vhl
-    # archsuffix: aarch64
     # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
     fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
-    # raspbian_url: https://drive.google.com/file/d/1CJhbPZuDtyi1Giahmaigpk81Qas5dDaE/view?usp=sharing
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
   tasks:
@@ -148,6 +145,8 @@
 
 - name: Play to write to flash
   hosts: flashers
+  vars: 
+    source: builder1
   tasks:
     - name: Write to flash
       vars:
@@ -157,7 +156,6 @@
         root: '{{ flash_root }}'
       include_role:
         name: arm-image
-
     - name: Unmount the boot filesystems
       mount:
         path: "{{ item }}"
