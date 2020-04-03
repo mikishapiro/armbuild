@@ -51,7 +51,7 @@
   delegate_to: "{{ target.machine }}"
   filesystem:
     dev: "{{ target.device }}2"
-    fstype: xfs
+    fstype: ext4
 
 - name: make sure local mount stubs exist
   delegate_to: "{{ target.machine }}"
@@ -67,7 +67,7 @@
     path: "{{ mntroot }}/piroot"
     state: mounted
     fstab: /tmp/fstab.dummy
-    fstype: xfs
+    fstype: ext4
 
 - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
   shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/piroot; tar xvfp -'"
