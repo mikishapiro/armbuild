@@ -30,8 +30,6 @@
 # - name: isolate the mbr to a separate file
 #  shell: "dd if={{ mbr.image }} bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.mbr"
 
-- debug:
-    msg: '( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | ssh root@{{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
 - name: "stream the mbr and boot images to {{ target.machine }} and dd them to {{ target.device }}"
   shell: '( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | ssh root@{{ target.machine }} dd of={{ target.device }} bs={{ dd_blocksize }}'
 
@@ -53,7 +51,7 @@
   delegate_to: "{{ target.machine }}"
   filesystem:
     dev: "{{ target.device }}2"
-    fstype: ext4
+    fstype: xfs
 
 - name: make sure local mount stubs exist
   delegate_to: "{{ target.machine }}"
@@ -72,7 +70,7 @@
     fstype: "ext4"
 
 - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
-  shell: "tar cfp - . | ssh {{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
+  shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
   args:
     chdir: "{{ mntroot }}/fedora32/root"
 
