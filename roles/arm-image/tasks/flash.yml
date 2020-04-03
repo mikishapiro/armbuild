@@ -79,7 +79,7 @@
 - name: chmod the root filesystem on the target device
   delegate_to: "{{ target.machine }}"
   file:
-    path: "{{ mntroot }}/fedora32/root"
+    path: "{{ mntroot }}/piroot"
     state: directory
     mode: '0755'
 
