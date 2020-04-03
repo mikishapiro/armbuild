@@ -69,11 +69,8 @@
     fstab: /tmp/fstab.dummy
     fstype: xfs
 
-- debug:
-    msg: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
-
 - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
-  shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
+  shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/piroot; tar xvfp -'"
   args:
     chdir: "{{ mntroot }}/fedora32/root"
 
@@ -87,5 +84,5 @@
 - name: Unmount the remote target filesystem
   delegate_to: "{{ target.machine }}"
   mount:
-    path: "{{ mntroot }}/fedora32/root"
+    path: "{{ mntroot }}/piroot"
     state: unmounted
