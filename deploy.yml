@@ -159,4 +159,5 @@
         state: unmounted
       loop:
         - "{{ mntroot }}/fedora32/root"
+    # TODO: add a step to clean up the kpartx /dev/loopN devices
 ...
