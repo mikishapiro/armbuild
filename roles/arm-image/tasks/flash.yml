@@ -73,6 +73,8 @@
   shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/piroot; tar xvfp -'"
   args:
     chdir: "{{ mntroot }}/fedora32/root"
+    warn: no
+
 
 - name: chmod the root filesystem on the target device
   delegate_to: "{{ target.machine }}"
