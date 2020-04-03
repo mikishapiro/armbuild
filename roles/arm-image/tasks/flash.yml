@@ -56,7 +56,7 @@
 - name: make sure local mount stubs exist
   delegate_to: "{{ target.machine }}"
   file:
-    name: "{{ mntroot }}/fedora32/root"
+    name: "{{ mntroot }}/piroot"
     mode: '0700'
     state: directory
 
@@ -64,10 +64,10 @@
   delegate_to: "{{ target.machine }}"
   mount:
     src: "{{ target.device }}2"
-    path: "{{ mntroot }}/fedora32/root"
+    path: "{{ mntroot }}/piroot"
     state: mounted
     fstab: /tmp/fstab.dummy
-    fstype: "ext4"
+    fstype: xfs
 
 - debug:
     msg: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
@@ -76,9 +76,6 @@
   shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
   args:
     chdir: "{{ mntroot }}/fedora32/root"
-- fail:
-# - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
-#   shell: "chown 755 {{ mntroot }}/fedora32/root"
 
 - name: chmod the root filesystem on the target device
   delegate_to: "{{ target.machine }}"
