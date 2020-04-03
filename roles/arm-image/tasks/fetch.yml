@@ -46,6 +46,7 @@
 - name: Extract zip archives
   unarchive:
     src: "{{ download.dest }}"
+    remote_src: true
     dest: "{{ workpath }}"
     keep_newer: true
   when: url.find("zip") != -1
