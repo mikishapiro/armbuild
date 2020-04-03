@@ -69,15 +69,18 @@
     fstab: /tmp/fstab.dummy
     fstype: "ext4"
 
+- debug:
+    msg: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
+
 - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
   shell: "tar cfp - . | ssh root@{{ target.machine }} 'cd {{ mntroot }}/fedora32/root; tar xvfp -'"
   args:
     chdir: "{{ mntroot }}/fedora32/root"
-
+- fail:
 # - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
 #   shell: "chown 755 {{ mntroot }}/fedora32/root"
 
-- name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
+- name: chmod the root filesystem on the target device
   delegate_to: "{{ target.machine }}"
   file:
     path: "{{ mntroot }}/fedora32/root"
