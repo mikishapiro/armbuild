@@ -1,8 +1,10 @@
+[all]
+[all:vars]
 [builders]
 builder1
 [builders:vars]
-workpath=/home/builder/src/armbuild/work
+workpath=/home/builder/src/armbuild/work2
 [flashers]
 flasher1
 [flashers:vars]
-workpath=/home/builder/src/armbuild/work
+workpath=/home/builder/src/armbuild/work3

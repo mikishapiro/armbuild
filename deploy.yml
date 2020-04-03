@@ -1,21 +1,22 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
+  become: true
   hosts: builders
 #  connection: local
   vars: 
     dir: /usr/src
-    workpath: ~/armbuild/work
+    workpath: /home/builder/src/armbuild/work
     mntroot: /mnt
     target:
-      machine: armstrong
+      machine: flasher1
       device: /dev/sdb
     dd_blocksize: 524288
     # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
     fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
     raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
     lazy: true
-  tasks:
-
+  tasks:  
+    - debug: var=workpath
 # Set up Fedora 32
     - name: Download and prep Fedora 32
       vars:
@@ -87,7 +88,7 @@
         raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
           device: eth0
-          ipaddr: 192.168.1.26
+          ipaddr: 192.168.1.29
           prefix: 24
           gateway: 192.168.1.1
           dns1: 8.8.8.8
@@ -140,14 +141,10 @@
       loop:
         - "{{ mntroot }}/raspbian/boot"
 
+    - debug: var=flash_mbr
     - debug: var=flash_boot
     - debug: var=flash_root
 
-- name: Play to write to flash
-  hosts: flashers
-  vars: 
-    source: builder1
-  tasks:
     - name: Write to flash
       vars:
         instruction: flash
