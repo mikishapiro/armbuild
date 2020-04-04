@@ -75,11 +75,11 @@
         location: "{{ mntroot }}/fedora32/root"
         raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
-          device: eth0
-          ipaddr: 192.168.1.29
-          prefix: 24
-          gateway: 192.168.1.1
-          dns1: 8.8.8.8
+          device: "{{ pi_interface }}"
+          ipaddr: "{{ pi_ip }}"
+          prefix: "{{ pi_prefix }}"
+          gateway: "{{ pi_gateway }}"
+          dns1: "{{ pi_dns }}"
           bootproto: none
       include_role:
         name: arm-image  

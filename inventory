@@ -9,8 +9,9 @@ dd_blocksize=524288
 fedora32_url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
 raspbian_url=https://downloads.raspberrypi.org/raspbian_lite_latest
 lazy=true
+pi_interface=eth0
 pi_ip=192.168.1.27
-pi_netmask=255.255.255.0
+pi_prefix=24
 pi_gateway=192.168.1.1
 pi_dns=8.8.8.8
 
