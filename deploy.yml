@@ -161,5 +161,5 @@
         - "{{ mntroot }}/fedora32/root"
 
     - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
-      shell: "lvchange -a n fedora ; kpartx -d /dev/loop0"
+      shell: "lvchange -a n fedora ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
 ...
