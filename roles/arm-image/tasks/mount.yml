@@ -1,5 +1,6 @@
 ---
 - name: make sure local mount stubs exist
+  become: true
   file:
     name: "{{ mountstub }}"
     mode: '0700'
@@ -9,6 +10,7 @@
 - debug:
     var: partition
 - name: "Mount lvm root partition in {{ mountstub }}"
+  become: true
   mount:
     src: "{{ image }}"
     path: "{{ mountstub }}"

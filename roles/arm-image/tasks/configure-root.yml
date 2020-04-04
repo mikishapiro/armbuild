@@ -4,17 +4,21 @@
     name: "{{ location }}/root/.ssh"
     mode: '0700'
     state: directory
+  when: pubkey is defined
+
 - name: create a file
   file:
     path: "{{ location }}/root/.ssh/authorized_keys"
     mode: '0600'
     state: touch
+  when: pubkey is defined
 
 - name: Set appropriate permissions on the authorized_keys file
   lineinfile:
     path: "{{ location }}/root/.ssh/authorized_keys"
     line: "{{ pubkey }}"
     state: present
+  when: pubkey is defined
 
 - name: Set root password
   lineinfile:
@@ -22,6 +26,7 @@
     state: present
     line: 'root:{{ rootpasswordhash }}::0:99999:7:::'
     regexp: '^root:'
+  when: rootpasswordhash is defined
 
 - name: Permit root login via ssh
   lineinfile:

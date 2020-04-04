@@ -1,20 +1,8 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
-  become: true
   hosts: builders
+#  become: true
 #  connection: local
-  vars: 
-    dir: /usr/src
-    workpath: /home/builder/src/armbuild/work
-    mntroot: /mnt
-    target:
-      machine: flasher1
-      device: /dev/sdb
-    dd_blocksize: 524288
-    # fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
-    fedora32_url: https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
-    raspbian_url: https://downloads.raspberrypi.org/raspbian_lite_latest
-    lazy: true
   tasks:  
     - debug: var=workpath
 # Set up Fedora 32
@@ -154,12 +142,13 @@
       include_role:
         name: arm-image
     - name: Unmount the root filesystems
+      become: true
       mount:
         path: "{{ item }}"
         state: unmounted
       loop:
         - "{{ mntroot }}/fedora32/root"
 
-    - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
+    - name: "Clean up the source Fedora LVM loopback devices"
       shell: "lvchange -a n fedora ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
 ...

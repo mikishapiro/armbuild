@@ -1,8 +1,0 @@
----
-# vars file for fedora-interface
-var_ifname: eth0
-var_dest: /etc/sysconfig/network_scripts
-var_ip: 192.168.6.55
-var_prefix: 24
-var_gw: 192.168.6.1
-var_dns: 8.8.8.8

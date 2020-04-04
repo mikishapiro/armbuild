@@ -1,5 +1,5 @@
 ---
 # tasks file for arm-image
-- name: "Execute the {{ instruction }} instruction"
+- name: "Execute the ===> {{ instruction }} <=== instruction"
   include: "{{ instruction }}.yml"
 

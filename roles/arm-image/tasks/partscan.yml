@@ -4,13 +4,11 @@
     partflags: []
     lvm: ""
 
-- name: Read device information (always use unit when probing)
+- name: Read device information
   parted:
     device: "{{ image }}"
     unit: B
   register: raw_part
-
-- debug: var=raw_part.partitions
 
 - name: Concatenate partition flags to check if there are lvm ones
   set_fact:
@@ -30,13 +28,15 @@
   when: lvm != true
 
 - name: Install the image handling packages
-  package:
-    name: 
-      - kpartx
-    state: latest
+  become: true
   when: lvm == true
+  package:
+    state: latest
+    name:
+      - kpartx
 
 - name: Invoke kparts to make lvm partitions in raw image file visible to lvm
+  become: true
   command: "kpartx -av {{ image }}"
   when: lvm == true
   register: kpartx_output
@@ -53,6 +53,6 @@
   when: lvm != true
 
 - set_fact:
-    boot_partition: 
+    boot_partition:
       - "{{ remaining_parts|last }}"
   when: lvm != true

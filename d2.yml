@@ -1,0 +1,8 @@
+---
+- name: Play to deploy an operating system on a Raspberry
+  hosts: all
+#  become: true
+  connection: local
+  tasks:  
+    - shell: whoami
+      become: true
