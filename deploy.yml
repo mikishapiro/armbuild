@@ -153,11 +153,13 @@
         root: '{{ flash_root }}'
       include_role:
         name: arm-image
-    - name: Unmount the boot filesystems
+    - name: Unmount the root filesystems
       mount:
         path: "{{ item }}"
         state: unmounted
       loop:
         - "{{ mntroot }}/fedora32/root"
-    # TODO: add a step to clean up the kpartx /dev/loopN devices
+
+    - name: "copy the Fedora32 root filesystem as files to {{ target.machine }}"
+      shell: "lvchange -a n fedora ; kpartx -d /dev/loop0"
 ...
