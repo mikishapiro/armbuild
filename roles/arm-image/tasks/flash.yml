@@ -21,7 +21,7 @@
     - boot
     - root
     - dd_blocksize
-    - target
+
 
 - name: Wipe out the first 300MB of the target disk to avoid parted complaints
   delegate_to: "{{ targetmachine }}"
@@ -38,6 +38,8 @@
     device: "{{ targetdevice }}"
     number: 2
     state: absent
+- pause: 
+    minutes: 1
 
 - name: Create a new root partition on {{ targetdevice }} on {{ targetmachine }}"
   delegate_to: "{{ targetmachine }}"
@@ -55,7 +57,7 @@
     dev: "{{ targetdevice }}2"
     fstype: ext4
 
-- name: make sure local mount stubs exist
+- name: "Ensure mount stubs on {{ targetmachine }} exist"
   delegate_to: "{{ targetmachine }}"
   become: true
   file:
@@ -74,6 +76,7 @@
     fstype: ext4
 
 - name: "copy the Fedora32 root filesystem as files to {{ targetdevice }}2 on {{ targetmachine }}"
+  become: true
   shell: "tar cfp - . | ssh root@{{ targetmachine }} 'cd {{ mntroot }}/piroot; tar xvfp -'"
   args:
     chdir: "{{ mntroot }}/fedora32/root"
@@ -87,7 +90,7 @@
     state: directory
     mode: '0755'
 
-- name: Unmount the remote target filesystem
+- name: Unmount the target filesystem
   delegate_to: "{{ targetmachine }}"
   become: true
   mount:
