@@ -28,9 +28,9 @@
   become: true
   shell: "dd if=/dev/zero of={{ targetdevice }} bs=1M count=300"
 
-- name: a 
-  debug:
-    msg: 'count={{ (mbr.partition.size|int/dd_blocksize)|int }}'
+# - name: a 
+#   debug:
+#     msg: 'count={{ (mbr.partition.size|int/dd_blocksize)|int }}'
 - name: b
   debug:
     msg: 'skip={{ (boot.partition.begin|int/dd_blocksize)|int }}'
