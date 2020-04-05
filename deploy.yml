@@ -75,15 +75,17 @@
         location: "{{ mntroot }}/fedora32/root"
         raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
+          bootproto: "{{ pi_bootproto }}"
           device: "{{ pi_interface }}"
           ipaddr: "{{ pi_ip }}"
           prefix: "{{ pi_prefix }}"
           gateway: "{{ pi_gateway }}"
           dns1: "{{ pi_dns }}"
-          bootproto: none
       include_role:
-        name: arm-image  
+        name: arm-image
+    
     - name: Unmount the root filesystems
+      become: true
       mount:
         path: "{{ item }}"
         state: unmounted
@@ -123,6 +125,7 @@
         name: arm-image
 
     - name: Unmount the boot filesystems
+      become: true
       mount:
         path: "{{ item }}"
         state: unmounted
@@ -141,6 +144,7 @@
         root: '{{ flash_root }}'
       include_role:
         name: arm-image
+    
     - name: Unmount the root filesystems
       become: true
       mount:
@@ -150,5 +154,6 @@
         - "{{ mntroot }}/fedora32/root"
 
     - name: "Clean up the source Fedora LVM loopback devices"
+      become: true
       shell: "lvchange -a n fedora ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
 ...

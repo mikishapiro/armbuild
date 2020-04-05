@@ -1,20 +1,27 @@
 [all]
 [all:vars]
-workpath=/tmp
+workpath=/home/mikishapiro
 mntroot=/mnt
 targetmachine=flasher1
-targedevice=/dev/sdb
+targetdevice=/dev/sdb
 dd_blocksize=524288
-# fedora32_url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200318.n.0/compose/Server/armhfp/images/Fedora-Server-armhfp-32-20200318.n.0-sda.raw.xz
+# Fedora version 32 pre-release taken from nightlies: https://www.happyassassin.net/nightlies.html
 fedora32_url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
+# From here: https://www.raspberrypi.org/downloads/raspbian/
 raspbian_url=https://downloads.raspberrypi.org/raspbian_lite_latest
-lazy=true
+pi_bootproto=none
 pi_interface=eth0
 pi_ip=192.168.1.27
 pi_prefix=24
 pi_gateway=192.168.1.1
 pi_dns=8.8.8.8
-
+# pubkey: 'ssh-rsa AAAA... user@domain.com'
+# rootpasswordhash: 'ROOTHASHHERE'
+# To be implemented at a later stage:
+# ssid="MYSSID"
+# wifi_password="MYWIFIPASSWORD"
+# Prevents re-extracting images from downloaded archives:
+lazy=true
 [builders]
 builder1
 

@@ -29,6 +29,7 @@
   when: rootpasswordhash is defined
 
 - name: Permit root login via ssh
+  become: yes
   lineinfile:
     path: "{{ location }}/etc/ssh/sshd_config"
     state: present
@@ -36,6 +37,7 @@
     regexp: '^PermitRootLogin'
 
 - name: Replace root line in fstab
+  become: yes
   lineinfile:
     path: "{{ location }}/etc/fstab"
     state: present
@@ -43,23 +45,36 @@
     regexp: '^.* / .*'
 
 - name: Remove boot and boot/efi lines in fstab
+  become: yes
   lineinfile:
     path: "{{ location }}/etc/fstab"
     state: absent
     regexp: '^.* /boot.*'
 
+- name: Add boot to fstab
+  become: yes
+  lineinfile:
+    path: "{{ location }}/etc/fstab"
+    state: present
+    line: "/dev/mmcblk0p1 /boot vfat defaults,noatime 0 0"
+    regexp: '^.* / .*'
+
 - name: Copy over raspbian kernel modules
+  become: yes
   command: "cp -uvrfp {{ raspbian_location }}/lib/modules {{ location }}/usr/lib"
 
 - name: Copy over raspbian kernel modules
+  become: yes
   command: 'cp -uvrfp {{ raspbian_location }}/etc/modprobe.d/. {{ location }}/etc/modprobe.d/'
 
 - name: "Deploy the {{ network.device }} network interface configuration"
+  become: yes
   template:
     src: templates/ifcfg.j2
     dest: "{{ location }}/etc/sysconfig/network-scripts/ifcfg-{{ network.device }}"
 
 - name: Disable the initial-setup and other unneeded services
+  become: yes
   file:
     path: "{{ location }}/etc/systemd/system/multi-user.target.wants/{{ item }}.service"
     state: absent
@@ -81,7 +96,3 @@
     - smartd
     - libvirtd
     - remote-fs
-
-# - fix up /etc/fstab
-...
-

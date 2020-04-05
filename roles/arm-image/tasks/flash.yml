@@ -28,9 +28,6 @@
   become: true
   shell: "dd if=/dev/zero of={{ targetdevice }} bs=1M count=300"
  
-# - name: isolate the mbr to a separate file
-#  shell: "dd if={{ mbr.image }} bs={{ dd_blocksize }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} of={{ mbr.image }}.mbr"
-
 - name: "stream the mbr and boot images to {{ targetmachine }} and dd them to {{ targetdevice }}"
   shell: '( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | ssh root@{{ targetmachine }} dd of={{ targetdevice }} bs={{ dd_blocksize }}'
 
