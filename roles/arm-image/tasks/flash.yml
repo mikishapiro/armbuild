@@ -38,8 +38,6 @@
     device: "{{ targetdevice }}"
     number: 2
     state: absent
-- pause: 
-    minutes: 1
 
 - name: Create a new root partition on {{ targetdevice }} on {{ targetmachine }}"
   delegate_to: "{{ targetmachine }}"
