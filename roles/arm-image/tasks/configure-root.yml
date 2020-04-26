@@ -41,7 +41,7 @@
   lineinfile:
     path: "{{ location }}/etc/fstab"
     state: present
-    line: "/dev/mmcblk0p2 / xfs defaults,noatime 0 0"
+    line: "/dev/mmcblk0p2 / ext4 defaults,noatime 0 0"
     regexp: '^.* / .*'
 
 - name: Remove boot and boot/efi lines in fstab
