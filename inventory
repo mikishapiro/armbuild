@@ -5,13 +5,14 @@ mntroot=/mnt
 targetmachine=flasher1
 targetdevice=/dev/sdb
 dd_blocksize=524288
-# Fedora version 32 pre-release taken from nightlies: https://www.happyassassin.net/nightlies.html
-fedora32_url=https://kojipkgs.fedoraproject.org/compose/branched/Fedora-32-20200401.n.1/compose/Server/aarch64/images/Fedora-Server-32-20200401.n.1.aarch64.raw.xz
+# Fedora pre-releases can be taken from nightlies: https://www.happyassassin.net/nightlies.html
+# Fedora can be taken from: https://getfedora.org/en/server/download/
+fedora32_url=https://download.fedoraproject.org/pub/fedora/linux/releases/test/32_Beta/Server/aarch64/images/Fedora-Server-32_Beta-1.2.aarch64.raw.xz
 # From here: https://www.raspberrypi.org/downloads/raspbian/
 raspbian_url=https://downloads.raspberrypi.org/raspbian_lite_latest
 pi_bootproto=none
 pi_interface=eth0
-pi_ip=192.168.1.27
+pi_ip=192.168.1.29
 pi_prefix=24
 pi_gateway=192.168.1.1
 pi_dns=8.8.8.8
@@ -21,7 +22,7 @@ pi_dns=8.8.8.8
 # ssid="MYSSID"
 # wifi_password="MYWIFIPASSWORD"
 # Prevents re-extracting images from downloaded archives:
-lazy=true
+lazy=false
 [builders]
 builder1
 

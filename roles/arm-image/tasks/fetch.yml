@@ -4,23 +4,36 @@
     name: "{{ workpath }}"
     state: directory
 
+- name: set a variable to contain the escaped octal value of doublequotes
+  set_fact:
+    dq: \42
+
 - name: "Checking for redirect and setting redcheck.stdout_lines.0 to notredirect or the actual url"
-  shell: 'curl {{ requested_url }} --max-time 5 --max-redirs 0 --silent > /dev/null && curl {{ requested_url }} --max-redirs 0 --silent |grep moved|cut -d\" -f2 || echo notredirect'
+  shell: "curl {{ requested_url }} --max-time 5 --max-redirs 0 --silent |grep moved > /dev/null && curl {{ requested_url }} --max-redirs 0 --silent |grep moved|cut -d$'{{ dq }}' -f2 || echo notredirect"
   args:
     warn: no
   register: redcheck
+  when: lazy != true
 
 - name: "Use the redirect URL {{ redcheck.stdout_lines.0 }} to avoid redownloading large images"
   set_fact:
     url: "{{ redcheck.stdout_lines.0 }}"
-  when: redcheck.stdout_lines.0 != "notredirect"
+  when:
+    - redcheck.stdout_lines.0 != "notredirect"
+    - lazy != true
 
 - name: "Else use the requested URL {{ requested_url }}"
   set_fact:
     url: "{{ requested_url }}"
-  when: redcheck.stdout_lines.0 == "notredirect"
-
-- debug: var=url
+  when:
+    - redcheck.stdout_lines.0 == "notredirect"
+    - lazy != true
+      
+- name: "Use the requested URL {{ requested_url }} if lazy"
+  set_fact:
+    url: "{{ requested_url }}"
+  when:
+    lazy == true
 
 - name: "Download the image from {{ url }}"
   get_url:

@@ -36,14 +36,6 @@
     line: "PermitRootLogin yes"
     regexp: '^PermitRootLogin'
 
-- name: Replace root line in fstab
-  become: yes
-  lineinfile:
-    path: "{{ location }}/etc/fstab"
-    state: present
-    line: "/dev/mmcblk0p2 / ext4 defaults,noatime 0 0"
-    regexp: '^.* / .*'
-
 - name: Remove boot and boot/efi lines in fstab
   become: yes
   lineinfile:
@@ -59,11 +51,23 @@
     line: "/dev/mmcblk0p1 /boot vfat defaults,noatime 0 0"
     regexp: '^.* / .*'
 
+- name: Replace root line in fstab
+  become: yes
+  lineinfile:
+    path: "{{ location }}/etc/fstab"
+    state: present
+    line: "/dev/mmcblk0p2 /     ext4 defaults,noatime 0 0"
+    regexp: '^.* / .*'
+
 - name: Copy over raspbian kernel modules
   become: yes
   command: "cp -uvrfp {{ raspbian_location }}/lib/modules {{ location }}/usr/lib"
 
-- name: Copy over raspbian kernel modules
+- name: Copy over firmware
+  become: yes
+  command: "cp -uvrfp {{ raspbian_location }}/lib/firmware {{ location }}/lib"
+
+- name: Copy over raspbian modprobe.d blacklist
   become: yes
   command: 'cp -uvrfp {{ raspbian_location }}/etc/modprobe.d/. {{ location }}/etc/modprobe.d/'
 
