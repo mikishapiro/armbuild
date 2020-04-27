@@ -13,27 +13,27 @@
   args:
     warn: no
   register: redcheck
-  when: lazy != true
+  when: deref != true
 
-- name: "Use the redirect URL {{ redcheck.stdout_lines.0 }} to avoid redownloading large images"
+- name: "Use the redirect URL to avoid redownloading large images"
   set_fact:
     url: "{{ redcheck.stdout_lines.0 }}"
   when:
     - redcheck.stdout_lines.0 != "notredirect"
-    - lazy != true
+    - deref != true
 
 - name: "Else use the requested URL {{ requested_url }}"
   set_fact:
     url: "{{ requested_url }}"
   when:
     - redcheck.stdout_lines.0 == "notredirect"
-    - lazy != true
+    - deref != true
       
-- name: "Use the requested URL {{ requested_url }} if lazy"
+- name: "Use the requested URL {{ requested_url }} if deref is off"
   set_fact:
     url: "{{ requested_url }}"
   when:
-    lazy == true
+    deref == true
 
 - name: "Download the image from {{ url }}"
   get_url:
@@ -52,6 +52,7 @@
   register: raw_image_stat_result
 
 - debug: var=raw_image_stat_result
+- debug: var=url
 
 - name: Extract xz archives when they are not yet extracted
   command: "unxz -fk {{ download.dest }}"
@@ -62,7 +63,7 @@
 - name: Extract xz archives when something named like their content is there
   command: "unxz -fk {{ download.dest }}"
   when: 
-    - url.find("xz")
+    - not url.find("zip")
     - raw_image_stat_result.stat.exists
     - not lazy|bool
     

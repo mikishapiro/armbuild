@@ -22,7 +22,9 @@ pi_dns=8.8.8.8
 # ssid="MYSSID"
 # wifi_password="MYWIFIPASSWORD"
 # Prevents re-extracting images from downloaded archives:
-lazy=false
+lazy=true
+# Dereferences HTTP redirects (raspbian URLs use them) to find out real filename which helps not redownload it each time
+deref=true
 [builders]
 builder1
 
