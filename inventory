@@ -7,7 +7,8 @@ targetdevice=/dev/sdb
 dd_blocksize=524288
 # Fedora pre-releases can be taken from nightlies: https://www.happyassassin.net/nightlies.html
 # Fedora can be taken from: https://getfedora.org/en/server/download/
-fedora32_url=https://download.fedoraproject.org/pub/fedora/linux/releases/test/32_Beta/Server/aarch64/images/Fedora-Server-32_Beta-1.2.aarch64.raw.xz
+# fedora32_url=https://download.fedoraproject.org/pub/fedora/linux/releases/test/32_Beta/Server/aarch64/images/Fedora-Server-32_Beta-1.2.aarch64.raw.xz
+fedora32_url=fedora32_url: https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz
 # From here: https://www.raspberrypi.org/downloads/raspbian/
 raspbian_url=https://downloads.raspberrypi.org/raspbian_lite_latest
 pi_bootproto=none
