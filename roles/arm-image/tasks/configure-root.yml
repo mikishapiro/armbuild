@@ -75,11 +75,19 @@
   become: yes
   command: 'cp -uvrfp {{ raspbian_location }}/etc/modprobe.d/. {{ location }}/etc/modprobe.d/'
 
-- name: "Deploy the {{ network.device }} network interface configuration"
+- name: "Deploy the {{ network.device }} network static interface configuration"
   become: yes
   template:
     src: templates/ifcfg.j2
     dest: "{{ location }}/etc/sysconfig/network-scripts/ifcfg-{{ network.device }}"
+  when: network.bootproto != "dhcp"
+
+- name: "Deploy the {{ network.device }} network dynamic interface configuration"
+  become: yes
+  template:
+    src: templates/ifcfg-dhcp.j2
+    dest: "{{ location }}/etc/sysconfig/network-scripts/ifcfg-{{ network.device }}"
+  when: network.bootproto == "dhcp"
 
 - name: Disable the initial-setup and other unneeded services
   become: yes
