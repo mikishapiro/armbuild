@@ -1,5 +1,6 @@
 ---
 - name: create a .ssh directory
+  become: yes
   file:
     name: "{{ location }}/root/.ssh"
     mode: '0700'
@@ -7,6 +8,7 @@
   when: pubkey is defined
 
 - name: create a file
+  become: yes
   file:
     path: "{{ location }}/root/.ssh/authorized_keys"
     mode: '0600'
@@ -14,6 +16,7 @@
   when: pubkey is defined
 
 - name: Set appropriate permissions on the authorized_keys file
+  become: yes
   lineinfile:
     path: "{{ location }}/root/.ssh/authorized_keys"
     line: "{{ pubkey }}"
@@ -21,6 +24,7 @@
   when: pubkey is defined
 
 - name: Set root password
+  become: yes
   lineinfile:
     path: "{{ location }}/etc/shadow"
     state: present
