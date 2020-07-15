@@ -10,6 +10,7 @@
       vars:
         instruction: fetch
         requested_url: "{{ fedora32_url }}"
+        requested_checksum_url: "{{ fedora32checksum_url }}"
       include_role:
         name: arm-image
    
@@ -44,6 +45,7 @@
       vars:
         instruction: fetch
         requested_url: "{{ raspbian_url }}"
+        requested_checksum_url: "{{ raspbianchecksum_url }}"
       include_role:
         name: arm-image
    
