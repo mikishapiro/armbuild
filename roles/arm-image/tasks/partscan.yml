@@ -41,6 +41,22 @@
   when: lvm == true
   register: kpartx_output
 
+- name: Get volume group UUID
+  become: true
+  shell: "pvs -o +vg_uuid | grep loop | awk '{print $7}'"
+  when: lvm == true
+  register: vguuid_output
+
+- name: Store volume group UUID
+  set_fact:
+    vguuid: "{{ vguuid_output.stdout }}"
+  when: lvm == true
+
+- name: Rename volume group
+  become: true
+  command: "vgrename {{ vguuid }} fedoraarm"
+  when: lvm == true
+
 - name: Set the rootpart if fedora aarch64 lvm is used
   set_fact:
     root_partition:
