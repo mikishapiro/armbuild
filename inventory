@@ -28,6 +28,9 @@ pi_dns=8.8.8.8
 lazy=true
 # Dereferences HTTP redirects (raspbian URLs use them) to find out real filename which helps not redownload it each time
 deref=true
+# Single host, define to true if running on single host instead of
+# multiple hosts to avoid image transfers over network.
+single_host=false
 [builders]
 builder1
 

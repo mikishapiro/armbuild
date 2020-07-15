@@ -30,6 +30,12 @@
 
 - name: "stream the mbr and boot images to {{ targetmachine }} and dd them to {{ targetdevice }}"
   shell: '( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | ssh root@{{ targetmachine }} dd of={{ targetdevice }} bs={{ dd_blocksize }}'
+  when: not single_host|bool
+
+- name: "write the mbr and boot images through dd to {{ targetdevice }}"
+  become: true
+  shell: '( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | dd of={{ targetdevice }} bs={{ dd_blocksize }}'
+  when: single_host|bool
 
 - name: "Remove partition 2 on {{ targetdevice }} on {{ targetmachine }}"
   delegate_to: "{{ targetmachine }}"
@@ -79,6 +85,15 @@
   args:
     chdir: "{{ mntroot }}/fedora32/root"
     warn: no
+  when: not single_host|bool
+
+- name: "copy the Fedora32 root filesystem as files to {{ targetmachine }}"
+  become: true
+  shell: "tar cpf - . | tar -C {{ mntroot }}/piroot -xvpf -"
+  args:
+    chdir: "{{ mntroot }}/fedora32/root"
+    warn: no
+  when: single_host|bool
 
 - name: "chmod the / directory inside {{ targetdevice }}2 on {{ targetmachine }}"
   delegate_to: "{{ targetmachine }}"
