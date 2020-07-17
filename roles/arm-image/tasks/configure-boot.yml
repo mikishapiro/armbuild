@@ -3,7 +3,7 @@
   lineinfile:
     path: "{{ location }}/cmdline.txt"
     state: present
-    line: "console=serial0,115200 console=tty1 root=PARTUUID=738a4d67-02 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet"
+    line: "console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet"
     regexp: 'console=.*'
 - name: Tell raspberry firmware to make use of the the aarch64 kernel named kernel8
   become: true

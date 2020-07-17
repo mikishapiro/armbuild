@@ -1,0 +1,16 @@
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+BOOTPROTO={{ network.bootproto }}
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=stable-privacy
+PREFIX={{ network.prefix }}
+NAME={{ network.device }}
+DEVICE={{ network.device }}
+ONBOOT=yes
+AUTOCONNECT_PRIORITY=-999

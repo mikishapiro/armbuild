@@ -35,10 +35,47 @@
   when:
     deref == true
 
+- name: "Checking for redirect and setting redcheck.stdout_lines.0 to notredirect or the actual url"
+  shell: "curl {{ requested_checksum_url }} --max-time 5 --max-redirs 0 --silent |grep moved > /dev/null && curl {{ requested_url }} --max-redirs 0 --silent |grep moved|cut -d$'{{ dq }}' -f2 || echo notredirect"
+  args:
+    warn: no
+  register: redcheck
+  when: deref != true
+
+- name: "Use the redirect URL to avoid redownloading large images"
+  set_fact:
+    url: "{{ redcheck.stdout_lines.0 }}"
+  when:
+    - redcheck.stdout_lines.0 != "notredirect"
+    - deref != true
+
+- name: "Else use the requested URL {{ requested_checksum_url }}"
+  set_fact:
+    urlchecksum: "{{ requested_checksum_url }}"
+  when:
+    - redcheck.stdout_lines.0 == "notredirect"
+    - deref != true
+
+- name: "Use the requested URL {{ requested_checksum_url }} if deref is off"
+  set_fact:
+    urlchecksum: "{{ requested_checksum_url }}"
+  when:
+    deref == true
+
+- name: "Download the image checksum from {{ urlchecksum }}"
+  get_url:
+    url: "{{ urlchecksum }}"
+    dest: "{{ workpath }}/{{ urlchecksum | basename }}"
+  register: download
+- debug: var=download
+
 - name: "Download the image from {{ url }}"
   get_url:
     url: "{{ url }}"
     dest: "{{ workpath }}/{{ url | basename }}"
+    checksum: 'sha256:{{ image_checksum }}'
+  vars:
+    image_checksum: '{{ lookup("file", "{{ workpath }}/{{ urlchecksum | basename }}") | regex_search("[0-9a-f]{64}") }}'
   register: download
 - debug: var=download
 
@@ -57,21 +94,21 @@
 - name: Extract xz archives when they are not yet extracted
   command: "unxz -fk {{ download.dest }}"
   when: 
-    - url.find("xz")
+    - download.dest is search("xz")
     - not raw_image_stat_result.stat.exists
 
 - name: Extract xz archives when something named like their content is there
   command: "unxz -fk {{ download.dest }}"
   when: 
-    - not url.find("zip")
+    - not download.dest.find("zip")
     - raw_image_stat_result.stat.exists
     - not lazy|bool
-    
+
 - name: Extract zip archives
   unarchive:
     src: "{{ download.dest }}"
     remote_src: true
     dest: "{{ workpath }}"
     keep_newer: true
-  when: url.find("zip") != -1
+  when: download.dest is search("zip")
 ...

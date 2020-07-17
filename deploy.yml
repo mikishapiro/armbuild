@@ -10,6 +10,7 @@
       vars:
         instruction: fetch
         requested_url: "{{ fedora32_url }}"
+        requested_checksum_url: "{{ fedora32checksum_url }}"
       include_role:
         name: arm-image
    
@@ -32,7 +33,7 @@
    
     - name: "Mount lvm fedora partition"
       vars:
-        image: "/dev/fedora/root"
+        image: "/dev/fedoraarm/root"
         instruction: mount
         mountstub: "{{ mntroot }}/fedora32/root"
         partition: "{{ root_partition.0 }}"
@@ -44,6 +45,7 @@
       vars:
         instruction: fetch
         requested_url: "{{ raspbian_url }}"
+        requested_checksum_url: "{{ raspbianchecksum_url }}"
       include_role:
         name: arm-image
    
@@ -155,5 +157,5 @@
 
     - name: "Clean up the source Fedora LVM loopback devices"
       become: true
-      shell: "lvchange -a n fedora ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
+      shell: "lvchange -a n fedoraarm ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
 ...
