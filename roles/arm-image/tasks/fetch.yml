@@ -69,13 +69,21 @@
   register: download
 - debug: var=download
 
+- name: "Get the content of {{ workpath }}/{{ urlchecksum | basename }}"
+  slurp:
+    src: "{{ workpath }}/{{ urlchecksum | basename }}"
+  register: image_checksum_b64
+
+- name: Get the actual checksum
+  set_fact:
+    image_checksum: "{{ image_checksum_b64.content | b64decode | regex_search('[0-9a-f]{64}') }}"
+- debug: var=image_checksum
+
 - name: "Download the image from {{ url }}"
   get_url:
     url: "{{ url }}"
     dest: "{{ workpath }}/{{ url | basename }}"
     checksum: 'sha256:{{ image_checksum }}'
-  vars:
-    image_checksum: '{{ lookup("file", "{{ workpath }}/{{ urlchecksum | basename }}") | regex_search("[0-9a-f]{64}") }}'
   register: download
 - debug: var=download
 
