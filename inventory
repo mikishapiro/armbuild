@@ -11,7 +11,7 @@ dd_blocksize=524288
 fedora32_url=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz
 fedora32checksum_url=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM
 # From here: https://www.raspberrypi.org/downloads/raspbian/
-raspbian_url=https://downloads.raspberrypi.org/raspbian_lite_latest
+raspbian_url=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip
 raspbianchecksum_url=http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip.sha256
 pi_bootproto=none
 pi_interface=eth0
