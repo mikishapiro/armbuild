@@ -1,7 +1,13 @@
 # Playbook to deploy Fedora 32 on a Raspberry Pi 4 using the boot partition and kernel from Raspbian. 
 
 Set your parameters in the inventory, then run:
-Three roles need to be performed - the system you run the playbook from, a system where the images get assembled, and a system where the product hits an SD card. These can be the same machine but don't have to be. 
+
+Three "roles" ("roles" in the generic sense of the word in English, not "Ansible Roles") need to be performed - 
+* A system that you run the playbook from
+* A system where the images get assembled
+* A system where the product hits an SD card.
+
+These can be the same machine but don't have to be. 
 
 To use, on the basae machine:
 Step 1:
