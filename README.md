@@ -28,4 +28,5 @@ https://medium.com/@mikishapiro/installing-64-bit-fedora-on-the-raspberry-pi-4-d
 There's a known issue where if there already is an LVM volume group on your machine named "fedora", the downloaded aarch64 Fedora image won't get properly mounted by the playbook. 
 
 If you need a kernel different from the default Raspbian one, refer:
+
 https://medium.com/ironhaul/compiling-a-custom-kernel-on-fedora-on-raspberry-pi-9e199731220b
