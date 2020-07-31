@@ -19,7 +19,9 @@ edit the inventory file with the settings you want.
 
 # Step 3: 
 Run:
+
 cd armbuild
+
 ansible-playbook -i inventory deploy.yml
 
 Add -vvv for gore. 
