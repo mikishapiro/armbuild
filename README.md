@@ -10,12 +10,15 @@ Three "roles" ("roles" in the generic sense of the word in English, not "Ansible
 These can be the same machine but don't have to be. 
 
 To use, on the basae machine:
-Step 1:
+
+# Step 1:
 dnf -y install ansible git 
 
-Step 2: edit the inventory file with the settings you want. 
+# Step 2: 
+edit the inventory file with the settings you want. 
 
-Step 3: Run:
+# Step 3: 
+Run:
 cd armbuild
 ansible-playbook -i inventory deploy.yml
 
