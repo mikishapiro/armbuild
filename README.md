@@ -33,7 +33,7 @@ Add -vvv for gore.
 
 A writeup of how to use this can be found here:
 
-https://medium.com/@mikishapiro/installing-64-bit-fedora-on-the-raspberry-pi-4-d4a665ea65d3
+https://medium.com/ironhaul/installing-64-bit-fedora-on-the-raspberry-pi-4-d4a665ea65d3
 
 There's a known issue where if there already is an LVM volume group on your machine named "fedora", the downloaded aarch64 Fedora image won't get properly mounted by the playbook. 
 
