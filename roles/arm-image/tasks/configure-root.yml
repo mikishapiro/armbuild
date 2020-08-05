@@ -32,6 +32,14 @@
     regexp: '^root:'
   when: rootpasswordhash is defined
 
+- name: Set hostname
+  become: yes
+  copy:
+    dest: /etc/hostname
+    content: |
+      '{{ pi_hostname }}'
+  when: pi_hostname is defined
+
 - name: Permit root login via ssh
   become: yes
   lineinfile:

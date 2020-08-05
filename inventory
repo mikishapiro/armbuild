@@ -19,6 +19,7 @@ pi_ip=192.168.1.29
 pi_prefix=24
 pi_gateway=192.168.1.1
 pi_dns=8.8.8.8
+#pi_hostname=my-pi-host.my-domain
 # pubkey='ssh-rsa AAAA... user@domain.com'
 # rootpasswordhash='ROOTHASHHERE'
 # To be implemented at a later stage:
