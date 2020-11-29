@@ -35,9 +35,9 @@
 - name: Set hostname
   become: yes
   copy:
-    dest: /etc/hostname
+    dest: "{{ location }}/etc/hostname"
     content: |
-      '{{ pi_hostname }}'
+      {{ pi_hostname }}
   when: pi_hostname is defined
 
 - name: Permit root login via ssh
