@@ -9,8 +9,8 @@
     - name: Download and prep Fedora 32
       vars:
         instruction: fetch
-        requested_url: "{{ fedora32_url }}"
-        requested_checksum_url: "{{ fedora32checksum_url }}"
+        requested_url: "{{ fedora_url }}"
+        requested_checksum_url: "{{ fedora_image_checksum }}"
       include_role:
         name: arm-image
    

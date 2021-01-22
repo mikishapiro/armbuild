@@ -5,33 +5,50 @@ mntroot=/mnt
 targetmachine=flasher1
 targetdevice=/dev/sdb
 dd_blocksize=524288
-# Fedora pre-releases can be taken from nightlies: https://www.happyassassin.net/nightlies.html
-# Fedora can be taken from: https://getfedora.org/en/server/download/
-# fedora32_url=https://download.fedoraproject.org/pub/fedora/linux/releases/test/32_Beta/Server/aarch64/images/Fedora-Server-32_Beta-1.2.aarch64.raw.xz
-fedora32_url=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz
-fedora32checksum_url=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM
-# From here: https://www.raspberrypi.org/downloads/raspbian/
+# Pick a Fedora version:
+
+# Current releases of Fedora can be taken from: https://getfedora.org/en/server/download/
+
+# If you want to use Fedora 32:
+fedora_url=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz
+fedora_image_checksum=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM
+
+# If you want to use Fedora 33:
+# fedora_url=https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz
+# fedora_image_checksum=https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM
+
+# Fedora pre-releases (when available) as well as Fedora Rawhide can be taken from nightlies: https://www.happyassassin.net/nightlies.html
+# Fedora 34 Beta:
+# Not available at this time
+
+# Raspbian source (Needed in addition to a Fedora source): 
+# From here: https://downloads.raspberrypi.org/raspbian_lite/images
 raspbian_url=https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip
 raspbianchecksum_url=http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip.sha256
+
 pi_bootproto=none
 pi_interface=eth0
 pi_ip=192.168.1.29
 pi_prefix=24
 pi_gateway=192.168.1.1
 pi_dns=8.8.8.8
-#pi_hostname=my-pi-host.my-domain
+pi_hostname=ironhaul-armbuilder-pi.example.com
 # pubkey='ssh-rsa AAAA... user@domain.com'
 # rootpasswordhash='ROOTHASHHERE'
 # To be implemented at a later stage:
 # ssid="MYSSID"
 # wifi_password="MYWIFIPASSWORD"
+
 # Prevents re-extracting images from downloaded archives:
 lazy=true
+
 # Dereferences HTTP redirects (raspbian URLs use them) to find out real filename which helps not redownload it each time
 deref=true
+
 # Single host, define to true if running on single host instead of
 # multiple hosts to avoid image transfers over network.
 single_host=false
+
 [builders]
 builder1
 

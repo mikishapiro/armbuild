@@ -12,4 +12,4 @@
     state: present
     line: "arm_64bit=1"
     regexp: 'arm_64bit=.*'
-  when: fedora32_url.find("aarch64") != -1
+  when: fedora_url.find("aarch64") != -1
