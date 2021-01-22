@@ -5,8 +5,8 @@
 #  connection: local
   tasks:  
     - debug: var=workpath
-# Set up Fedora 32
-    - name: Download and prep Fedora 32
+# Set up Fedora
+    - name: Download and prep Fedora
       vars:
         instruction: fetch
         requested_url: "{{ fedora_url }}"
@@ -25,7 +25,7 @@
       vars:
         instruction: mount
         image: "{{ extractedfile }}"
-        mountstub: "{{ mntroot }}/fedora32/root"
+        mountstub: "{{ mntroot }}/fedora/root"
         partition: "{{ root_partition.0 }}"
       include_role:
         name: arm-image
@@ -35,7 +35,7 @@
       vars:
         image: "/dev/fedoraarm/root"
         instruction: mount
-        mountstub: "{{ mntroot }}/fedora32/root"
+        mountstub: "{{ mntroot }}/fedora/root"
         partition: "{{ root_partition.0 }}"
       include_role:
         name: arm-image
@@ -74,7 +74,7 @@
     - name: Configure the fedora root filesystem
       vars:
         instruction: configure-root
-        location: "{{ mntroot }}/fedora32/root"
+        location: "{{ mntroot }}/fedora/root"
         raspbian_location: "{{ mntroot }}/raspbian/root"
         network:
           bootproto: "{{ pi_bootproto }}"
@@ -153,7 +153,7 @@
         path: "{{ item }}"
         state: unmounted
       loop:
-        - "{{ mntroot }}/fedora32/root"
+        - "{{ mntroot }}/fedora/root"
 
     - name: "Clean up the source Fedora LVM loopback devices"
       become: true
