@@ -77,3 +77,14 @@
         - name: "Clean up the source Fedora LVM loopback devices"
           become: true
           shell: "lvchange -a n fedoraarm ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
+        - debug:
+            msg: "{{ item.name }} is {{ item.value }}"
+          loop:
+            - name: "URL"
+              value: "{{ fedora_url }}"
+            - name: "deref"
+              value: "{{ deref }}"
+            - name: "lzay"
+              value: "{{ lazy }}"
+            - name: "single_host"
+              value: "{{ single_host }}"
