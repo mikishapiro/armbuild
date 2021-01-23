@@ -1,3 +1,4 @@
+---
 - name: Replace kernel parameters line in cmdline.txt
   become: true
   lineinfile:
@@ -5,7 +6,7 @@
     state: present
     line: "console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootfstype=ext4 elevator=deadline fsck.repair=yes rootwait quiet"
     regexp: 'console=.*'
-- name: Tell raspberry firmware to make use of the the aarch64 kernel named kernel8
+- name: Tell raspberry firmware to make use of the aarch64 kernel named kernel8
   become: true
   lineinfile:
     path: "{{ location }}/config.txt"
@@ -13,3 +14,4 @@
     line: "arm_64bit=1"
     regexp: 'arm_64bit=.*'
   when: fedora_url.find("aarch64") != -1
+...

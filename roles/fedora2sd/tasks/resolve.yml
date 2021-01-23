@@ -1,0 +1,20 @@
+---
+- name: "Setting redcheck.stdout_lines.0 to notredirect or the actual url"
+  shell: 'set -o pipefail ; curl {{ requested_url }} --max-time 5 --max-redirs 0 --silent > /dev/null && curl {{ requested_url }} --max-redirs 0 --silent |grep moved|cut -d\" -f2 || echo notredirect'
+  args:
+    warn: false
+  register: redcheck
+- name: set URL
+  set_fact:
+    url:
+- name: "Use redirect URL {{ redcheck.stdout_lines.0 }} to avoid redownloading"
+  set_stats:
+    url: "{{ redcheck.stdout_lines.0 }}"
+  when: redcheck.stdout_lines.0 != "notredirect"
+
+- name: "Else use the requested URL {{ requested_url }}"
+  set_fact:
+    url: "{{ requested_url }}"
+  when: redcheck.stdout_lines.0 == "notredirect"
+- debug: var=url
+...

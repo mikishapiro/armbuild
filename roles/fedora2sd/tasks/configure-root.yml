@@ -1,6 +1,6 @@
 ---
 - name: create a .ssh directory
-  become: yes
+  become: true
   file:
     name: "{{ location }}/root/.ssh"
     mode: '0700'
@@ -8,7 +8,7 @@
   when: pubkey is defined
 
 - name: create a file
-  become: yes
+  become: true
   file:
     path: "{{ location }}/root/.ssh/authorized_keys"
     mode: '0600'
@@ -16,7 +16,7 @@
   when: pubkey is defined
 
 - name: Set appropriate permissions on the authorized_keys file
-  become: yes
+  become: true
   lineinfile:
     path: "{{ location }}/root/.ssh/authorized_keys"
     line: "{{ pubkey }}"
@@ -24,7 +24,7 @@
   when: pubkey is defined
 
 - name: Set root password
-  become: yes
+  become: true
   lineinfile:
     path: "{{ location }}/etc/shadow"
     state: present
@@ -33,30 +33,31 @@
   when: rootpasswordhash is defined
 
 - name: Set hostname
-  become: yes
+  become: true
   copy:
     dest: "{{ location }}/etc/hostname"
+    mode: 0640
     content: |
       {{ pi_hostname }}
   when: pi_hostname is defined
 
 - name: Permit root login via ssh
-  become: yes
+  become: true
   lineinfile:
     path: "{{ location }}/etc/ssh/sshd_config"
     state: present
-    line: "PermitRootLogin yes"
+    line: "PermitRootLogin true"
     regexp: '^PermitRootLogin'
 
 - name: Remove boot and boot/efi lines in fstab
-  become: yes
+  become: true
   lineinfile:
     path: "{{ location }}/etc/fstab"
     state: absent
     regexp: '^.* /boot.*'
 
 - name: Add boot to fstab
-  become: yes
+  become: true
   lineinfile:
     path: "{{ location }}/etc/fstab"
     state: present
@@ -64,7 +65,7 @@
     regexp: '^.* / .*'
 
 - name: Replace root line in fstab
-  become: yes
+  become: true
   lineinfile:
     path: "{{ location }}/etc/fstab"
     state: present
@@ -72,33 +73,35 @@
     regexp: '^.* / .*'
 
 - name: Copy over raspbian kernel modules
-  become: yes
+  become: true
   command: "cp -uvrfp {{ raspbian_location }}/lib/modules {{ location }}/usr/lib"
 
 - name: Copy over firmware
-  become: yes
+  become: true
   command: "cp -uvrfp {{ raspbian_location }}/lib/firmware {{ location }}/lib"
 
 - name: Copy over raspbian modprobe.d blacklist
-  become: yes
+  become: true
   command: 'cp -uvrfp {{ raspbian_location }}/etc/modprobe.d/. {{ location }}/etc/modprobe.d/'
 
 - name: "Deploy the {{ network.device }} network static interface configuration"
-  become: yes
+  become: true
   template:
     src: templates/ifcfg.j2
     dest: "{{ location }}/etc/sysconfig/network-scripts/ifcfg-{{ network.device }}"
+    mode: 0640
   when: network.bootproto != "dhcp"
 
-- name: "Deploy the {{ network.device }} network dynamic interface configuration"
-  become: yes
+- name: "Deploy the {{ network.device }} nic configuration"
+  become: true
   template:
+    mode: 0640
     src: templates/ifcfg-dhcp.j2
     dest: "{{ location }}/etc/sysconfig/network-scripts/ifcfg-{{ network.device }}"
   when: network.bootproto == "dhcp"
 
 - name: Disable the initial-setup and other unneeded services
-  become: yes
+  become: true
   file:
     path: "{{ location }}/etc/systemd/system/multi-user.target.wants/{{ item }}.service"
     state: absent

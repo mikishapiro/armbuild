@@ -15,7 +15,7 @@
     src: "{{ image }}"
     path: "{{ mountstub }}"
     opts: "rw,loop,offset={{ partition.begin | int }}"
-    fstype: "{{ partition.fstype | regex_replace('fat32', 'vfat')}}"
+    fstype: "{{ partition.fstype | regex_replace('fat32', 'vfat') }}"
     state: mounted
     fstab: /tmp/fstab.dummy
 ...

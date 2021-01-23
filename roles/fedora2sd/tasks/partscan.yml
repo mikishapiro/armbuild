@@ -1,6 +1,7 @@
 ---
 # tasks file for armulator
-- set_fact:
+- name: Initialise variables
+  set_fact:
     partflags: []
     lvm: ""
 
@@ -25,13 +26,13 @@
   set_fact:
     root_partition:
       - "{{ raw_part.partitions|last }}"
-  when: lvm != true
+  when: not lvm
 
 - name: Install the image handling packages
   become: true
-  when: lvm == true
+  when: lvm
   package:
-    state: latest
+    state: present
     name:
       - kpartx
 
@@ -39,42 +40,44 @@
   become: true
   command: "kpartx -av {{ image }}"
   register: kpartx_output
-  when: lvm == true
+  when: lvm
 
 - name: Get LVM volume group name
   become: true
-  shell: "pvs -o +vg_uuid | grep loop | awk '{print $2}'"
+  shell: "set -o pipefail ; pvs -o +vg_uuid | grep loop | awk '{print $2}'"
   register: vgname_output
   when:
-  - lvm == true
+    - lvm
 
 - name: Get LVM volume group UUID
   become: true
-  shell: "pvs -o +vg_uuid | grep loop | awk '{print $7}'"
+  shell: "set -o pipefail ; pvs -o +vg_uuid | grep loop | awk '{print $7}'"
   register: vguuid_output
   when:
-  - lvm == true
-  - vgname_output.stdout != 'fedoraarm'
+    - lvm
+    - vgname_output.stdout != 'fedoraarm'
 
 - name: Rename volume group
   become: true
   command: "vgrename {{ vguuid_output.stdout }} fedoraarm"
   when:
-  - lvm == true
-  - vgname_output.stdout != 'fedoraarm'
+    - lvm
+    - vgname_output.stdout != 'fedoraarm'
 
 - name: Set the rootpart if fedora aarch64 lvm is used
   set_fact:
     root_partition:
       - begin: "0"
         fstype: "xfs"
-  when: lvm == true
+  when: lvm
 
-- set_fact:
+- name: Form data structure with remaining partitions
+  set_fact:
     remaining_parts: "{{ raw_part.partitions | difference( root_partition ) }}"
-  when: lvm != true
+  when: not lvm
 
-- set_fact:
+- name: Set variable to specify boot partition
+  set_fact:
     boot_partition:
       - "{{ remaining_parts|last }}"
-  when: lvm != true
+  when: not lvm

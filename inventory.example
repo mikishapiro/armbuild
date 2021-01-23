@@ -40,10 +40,10 @@ pi_hostname=ironhaul-armbuilder-pi.example.com
 # wifi_password="MYWIFIPASSWORD"
 
 # Prevents re-extracting images from downloaded archives:
-lazy=true
+lazy=enabled
 
 # Dereferences HTTP redirects (raspbian URLs use them) to find out real filename which helps not redownload it each time
-deref=true
+deref=enabled
 
 # Single host, define to true if running on single host instead of
 # multiple hosts to avoid image transfers over network.

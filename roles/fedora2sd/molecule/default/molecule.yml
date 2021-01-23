@@ -1,0 +1,17 @@
+---
+# dependency:
+#   name: galaxy
+#  options:
+#    role-file: molecule/defualt/requirements.yml
+driver:
+  name: delegated
+platforms:
+  - name: instance
+provisioner:
+  name: ansible
+verifier:
+  name: ansible
+lint: |
+  set -e
+  yamllint .
+  ansible-lint . -x 204,301

@@ -1,5 +1,4 @@
 ---
-# tasks file for arm-image
+# tasks file for fedora2sd
 - name: "Execute the ===> {{ instruction }} <=== instruction"
   include: "{{ instruction }}.yml"
-

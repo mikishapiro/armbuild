@@ -1,0 +1,118 @@
+---
+# tasks file for image-flash
+# using {{ dd_blocksize }} blocks
+# (tested with 512K blocks represented numerically as 524288)
+# {{ mbr }}, {{ boot }} and {{ root }} have the following structure
+# mbr|boot|root:
+#   image: path to image file
+#   partition:
+#     begin: First byte (represented with one digit past decimal point.
+#            Must be run through int for seeks and additive math.)
+#     end:   Last byte (represented with one digit past decimal point.
+#            Must be run through int for seeks and additive math.)
+#     size:  Size in bytes (represented with one digit past decimal point.
+#            Must be run through int for seeks and additive math.)
+# note
+#
+# due to addressging starting at zero,
+# begin and size will be even and dividable by blocksize
+# to convert to a blocks figure.
+# end will be odd and requires 1 be added to it before dividing by blocksizes
+# to be converted to a blocks figure.
+- name: Display parameters provided
+  debug:
+    var: "{{ item }}"
+  loop:
+    - mbr
+    - boot
+    - root
+    - dd_blocksize
+
+
+- name: Wipe out the first 300MB of the target disk to avoid parted complaints
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  command: "dd if=/dev/zero of={{ targetdevice }} bs=1M count=300"
+
+- name: "dd mbr, boot partition to {{ targetdevice }} on {{ targetmachine }}"
+  shell: 'set -o pipefail ; ( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | ssh root@{{ targetmachine }} dd of={{ targetdevice }} bs={{ dd_blocksize }}'
+  when: not single_host|bool
+
+- name: "write the mbr and boot images through dd to {{ targetdevice }}"
+  become: true
+  shell: 'set -o pipefail ; ( dd if={{ mbr.image }} count={{ (mbr.partition.size|int/dd_blocksize)|int }} bs={{ dd_blocksize }}; dd if={{ boot.image }} bs={{ dd_blocksize }} skip={{ (boot.partition.begin|int/dd_blocksize)|int }} count={{ (boot.partition.size|int/dd_blocksize)|int }} ) | dd of={{ targetdevice }} bs={{ dd_blocksize }}'
+  when: single_host|bool
+
+- name: "Remove partition 2 on {{ targetdevice }} on {{ targetmachine }}"
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  parted:
+    device: "{{ targetdevice }}"
+    number: 2
+    state: absent
+
+- name: Create new root partition on {{ targetdevice }} on {{ targetmachine }}"
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  parted:
+    device: "{{ targetdevice }}"
+    number: 2
+    state: present
+    part_start: "{{ ((mbr.partition.size|int + boot.partition.size|int)|int/1024)|int }}KiB"
+
+- name: "Create filesystem on {{ targetdevice }}2 on {{ targetmachine }}"
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  filesystem:
+    dev: "{{ targetdevice }}2"
+    fstype: ext4
+
+- name: "Ensure mount stubs on {{ targetmachine }} exist"
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  file:
+    name: "{{ mntroot }}/piroot"
+    mode: '0700'
+    state: directory
+
+- name: "mount {{ targetdevice }}2 on {{ targetmachine }}"
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  mount:
+    src: "{{ targetdevice }}2"
+    path: "{{ mntroot }}/piroot"
+    state: mounted
+    fstab: /tmp/fstab.dummy
+    fstype: ext4
+
+- name: "copy Fedora root files to {{ targetdevice }}2 on {{ targetmachine }}"
+  become: true
+  shell: "set -o pipefail ; tar cfp - . | ssh root@{{ targetmachine }} 'cd {{ mntroot }}/piroot; tar xvfp -'"
+  args:
+    chdir: "{{ mntroot }}/fedora/root"
+    warn: false
+  when: not single_host|bool
+
+- name: "copy the Fedora root filesystem as files to {{ targetmachine }}"
+  become: true
+  shell: "set -o pipefail ; tar cpf - . | tar -C {{ mntroot }}/piroot -xvpf -"
+  args:
+    chdir: "{{ mntroot }}/fedora/root"
+    warn: false
+  when: single_host|bool
+
+- name: "chmod / inside {{ targetdevice }}2 on {{ targetmachine }}"
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  file:
+    path: "{{ mntroot }}/piroot"
+    state: directory
+    mode: '0755'
+
+- name: Unmount the target filesystem
+  delegate_to: "{{ targetmachine }}"
+  become: true
+  mount:
+    path: "{{ mntroot }}/piroot"
+    state: unmounted
+...

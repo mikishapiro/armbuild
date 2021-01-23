@@ -1,0 +1,155 @@
+---
+- debug: var=workpath
+- name: Download and prep Fedora
+  vars:
+    instruction: fetch
+    requested_url: "{{ fedora_url }}"
+    requested_checksum_url: "{{ fedora_image_checksum }}"
+  include_role:
+    name: fedora2sd
+
+- name: "Find boot and root partitions in extracted image {{ extractedfile }}"
+  vars:
+    instruction: partscan
+    image: "{{ extractedfile }}"
+  include_role:
+    name: fedora2sd
+
+- name: "Mount non-lvm fedora partition"
+  vars:
+    instruction: mount
+    image: "{{ extractedfile }}"
+    mountstub: "{{ mntroot }}/fedora/root"
+    partition: "{{ root_partition.0 }}"
+  include_role:
+    name: fedora2sd
+  when: not lvm
+
+- name: "Mount lvm fedora partition"
+  vars:
+    image: "/dev/fedoraarm/root"
+    instruction: mount
+    mountstub: "{{ mntroot }}/fedora/root"
+    partition: "{{ root_partition.0 }}"
+  include_role:
+    name: fedora2sd
+  when: lvm
+
+- name: Download and prep Raspbian
+  vars:
+    instruction: fetch
+    requested_url: "{{ raspbian_url }}"
+    requested_checksum_url: "{{ raspbianchecksum_url }}"
+  include_role:
+    name: fedora2sd
+
+- name: "Find boot and root partitions in extracted image {{ extractedfile }}"
+  vars:
+    instruction: partscan
+    image: "{{ extractedfile }}"
+  include_role:
+    name: fedora2sd
+
+- name: Keep partition table data about root partition for flash later
+  set_fact:
+    flash_root:
+      image: "{{ extractedfile }}"
+      partition: "{{ root_partition.0 }}"
+
+- name: "Mount non-lvm root partition in {{ mntroot }}/raspbian/root"
+  vars:
+    instruction: mount
+    mountstub: "{{ mntroot }}/raspbian/root"
+    image: "{{ extractedfile }}"
+    partition: "{{ root_partition.0 }}"
+  include_role:
+    name: fedora2sd
+
+- name: Configure the fedora root filesystem
+  vars:
+    instruction: configure-root
+    location: "{{ mntroot }}/fedora/root"
+    raspbian_location: "{{ mntroot }}/raspbian/root"
+    network:
+      bootproto: "{{ pi_bootproto }}"
+      device: "{{ pi_interface }}"
+      ipaddr: "{{ pi_ip }}"
+      prefix: "{{ pi_prefix }}"
+      gateway: "{{ pi_gateway }}"
+      dns1: "{{ pi_dns }}"
+  include_role:
+    name: fedora2sd
+
+- name: Unmount the root filesystems
+  become: true
+  mount:
+    path: "{{ item }}"
+    state: unmounted
+  loop:
+    - "{{ mntroot }}/raspbian/root"
+
+- name: "Mount the boot partition in {{ mntroot }}/raspbian/boot"
+  vars:
+    instruction: mount
+    mountstub: "{{ mntroot }}/raspbian/boot"
+    image: "{{ extractedfile }}"
+    partition: "{{ boot_partition.0 }}"
+  include_role:
+    name: fedora2sd
+
+- name: Keep partition table data about the boot partition for flash later
+  set_fact:
+    flash_boot:
+      image: "{{ extractedfile }}"
+      partition: "{{ boot_partition.0 }}"
+
+- name: Keep partition table data about the master boot record for flash later
+  set_fact:
+    flash_mbr:
+      image: "{{ extractedfile }}"
+      partition:
+        begin: 0
+        end: "{{ (flash_boot.partition.begin|int - 1) }}"
+        size: "{{ flash_boot.partition.begin }}"
+
+- name: Perform any required changes to the boot filesystem
+  vars:
+    instruction: configure-boot
+    location: "{{ mntroot }}/raspbian/boot"
+    init: "/sbin/init"
+  include_role:
+    name: fedora2sd
+
+- name: Unmount the boot filesystems
+  become: true
+  mount:
+    path: "{{ item }}"
+    state: unmounted
+  loop:
+    - "{{ mntroot }}/raspbian/boot"
+
+- debug: var=flash_mbr
+- debug: var=flash_boot
+- debug: var=flash_root
+
+- name: Write to flash
+  vars:
+    instruction: flash
+    mbr: '{{ flash_mbr }}'
+    boot: '{{ flash_boot }}'
+    root: '{{ flash_root }}'
+  include_role:
+    name: fedora2sd
+
+- name: Unmount the root filesystems
+  become: true
+  mount:
+    path: "{{ item }}"
+    state: unmounted
+  loop:
+    - "{{ mntroot }}/fedora/root"
+
+- name: "Clean up the source Fedora LVM loopback devices"
+  become: true
+  shell: "lvchange -a n fedoraarm; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
+...

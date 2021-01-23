@@ -1,0 +1,79 @@
+---
+- name: Converge
+  hosts: localhost
+  vars:
+    MOLECULE_DEBUG: true
+  tasks:
+    - name: Run the main logic from the role
+      block:
+        - name: Call the role instructing it to execute the main logic
+          vars:
+            instruction: mainlogic
+            # requested_url: "{{ item.fedora_url }}"
+            # requested_checksum_url: "{{ item.fedora_image_checksum }}"
+            fedora_url: "{{ item.fedora_url }}"
+            fedora_image_checksum: "{{ item.fedora_image_checksum }}"
+            workpath: "~/"
+            mntroot: "/mnt"
+            targetmachine: "flasher1"
+            targetdevice: "/dev/sdb"
+            dd_blocksize: 524288
+            pi_bootproto: "none"
+            pi_interface: "eth0"
+            pi_ip: "192.168.1.29"
+            pi_prefix: 24
+            pi_gateway: "192.168.1.1"
+            pi_dns: "8.8.8.8"
+            pi_hostname: "ironhaul-armbuilder-pi.example.com"
+            raspbian_url: "https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip"
+            raspbianchecksum_url: "http://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/2020-02-13-raspbian-buster-lite.zip.sha256"
+            deref: "{{ item.deref }}"
+            lazy: "{{ item.lazy }}"
+            single_hostr: "{{ item.single_host }}"
+          include_role:
+            name: fedora2sd
+          loop:
+            - fedora_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
+              deref: true
+              lazy: true
+              single_host: false
+            - fedora_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
+              deref: true
+              lazy: true
+              single_host: true
+            - fedora_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
+              deref: false
+              lazy: true
+              single_host: true
+            - fedora_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
+              deref: true
+              lazy: false
+              single_host: true
+            - fedora_url: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM"
+              deref: true
+              lazy: true
+              single_host: false
+            - fedora_url: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM"
+              deref: true
+              lazy: true
+              single_host: true
+            - fedora_url: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM"
+              deref: false
+              lazy: true
+              single_host: true
+            - fedora_url: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6.aarch64.raw.xz"
+              fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/32/Server/aarch64/images/Fedora-Server-32-1.6-aarch64-CHECKSUM"
+              deref: true
+              lazy: false
+              single_host: true
+      rescue:
+        - name: "Clean up the source Fedora LVM loopback devices"
+          become: true
+          shell: "lvchange -a n fedoraarm ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
