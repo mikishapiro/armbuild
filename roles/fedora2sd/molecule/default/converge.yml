@@ -37,12 +37,12 @@
               fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
               deref: true
               lazy: true
-              single_host: false
+              single_host: true
             - fedora_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz"
               fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
               deref: true
               lazy: true
-              single_host: true
+              single_host: false
             - fedora_url: "https://download.fedoraproject.org/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3.aarch64.raw.xz"
               fedora_image_checksum: "https://mirror.aarnet.edu.au/pub/fedora/linux/releases/33/Server/aarch64/images/Fedora-Server-33-1.3-aarch64-CHECKSUM"
               deref: false
@@ -77,14 +77,3 @@
         - name: "Clean up the source Fedora LVM loopback devices"
           become: true
           shell: "lvchange -a n fedoraarm ; kpartx -d /dev/loop0 ; losetup -d /dev/loop0"
-        - debug:
-            msg: "{{ item.name }} is {{ item.value }}"
-          loop:
-            - name: "URL"
-              value: "{{ fedora_url }}"
-            - name: "deref"
-              value: "{{ deref }}"
-            - name: "lzay"
-              value: "{{ lazy }}"
-            - name: "single_host"
-              value: "{{ single_host }}"
