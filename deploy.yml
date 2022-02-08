@@ -1,7 +1,7 @@
 ---
 - name: Play to deploy an operating system on a Raspberry
   hosts: builders
-#   become: true
+#  become: true
 #  connection: local
   tasks:  
     - debug: var=workpath
